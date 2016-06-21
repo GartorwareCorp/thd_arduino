@@ -43,7 +43,7 @@ unsigned long time_start;
 unsigned int  time_calc;
 float realPower, reactivePower, apparentPower, powerFactor, Vrms, Irms;
 float realPowerFFT, reactivePowerFFT, apparentPowerFFT, powerFactorFFT, VrmsFFT, IrmsFFT, THDv, THDi;
-float sqV, sumV, sqI, sumI, instP, sumP, phaseShiftedV, instQ = 2000;
+float sqV, sumV, sqI, sumI, instP, sumP, phaseShiftedV;
 
 char V[8], I[8], P[8], S[8], Q[8], FP[8], V_FFT[8], I_FFT[8], P_FFT[8], S_FFT[8], Q_FFT[8], FP_FFT[8];
 char arm_1[6], arm_2[6], THD_var[6];
