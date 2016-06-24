@@ -26,12 +26,11 @@ int posicion_anterior = 0;
 
 float THDv=0, THDi=0;
 
-volatile bool up = 0;
-volatile bool down = 0;
-volatile bool ok = 0;
-volatile bool salir = 0;
+bool up = 0;
+bool down = 0;
+bool ok = 0;
+bool salir = 0;
 bool VorI = 0;
-long T0 = 0 ;
 
 void setup()
 {
@@ -43,7 +42,7 @@ void setup()
   //ratio_setup(248.8, 30.5, 1);
   //adc_setup ();
   Timer3.attachInterrupt(muestreo).setFrequency(6400);
-  active_Boton();
+  //active_Boton();
 }
 
 Radix4     radix;
@@ -51,6 +50,8 @@ Radix4     radix;
 
 void loop()
 {
+  posicion=5;
+  ok=1;
   if (up == 1) {
     up = 0;
     if (posicion == 0) {
@@ -78,8 +79,8 @@ void loop()
 }
 
 void muestreo(){
-  ADC->ADC_CR |= 0x02;                       //start ADC
-  while ((ADC->ADC_ISR & 0xC0) == 0x00);
+  //ADC->ADC_CR |= 0x02;                       //start ADC
+  //while ((ADC->ADC_ISR & 0xC0) == 0x00);
   if (numero_muestras >= 0 && numero_muestras < FFTSIZE) {
     //valorV[numero_muestras] = ADC->ADC_CDR[7]; //Cuidado, corresponde con el pin A0??
     //valorI[numero_muestras] = ADC->ADC_CDR[6]; //Pin A1*/
@@ -88,41 +89,7 @@ void muestreo(){
   numero_muestras++;
 }
 
-void BotonUp()
-{
-  if ( millis() > T0  + 250)
-  {
-    up = 1;
-    T0 = millis();
-  }
-}
 
-void BotonDown()
-{
-  if ( millis() > T0  + 250)
-  {
-    down = 1;
-    T0 = millis();
-  }
-}
-
-void BotonOk()
-{
-  if ( millis() > T0  + 250)
-  {
-    ok = 1;
-    T0 = millis();
-  }
-}
-
-void BotonExit()
-{
-  if ( millis() > T0  + 250)
-  { 
-    salir = 1;
-    T0 = millis();
-  }
-}
 
 void THD(float *mag, float *RMS_arm, float &THDx) {
   //Reset accumulators
@@ -243,6 +210,7 @@ void functionmenu (int posicion) {
       TFTscreen.text("Armonicos", 0, 0);
       VorI_menu(VorI);
       while (!salir && !ok) {
+        ok=1;
         if (up || down) {
           VorI = !VorI;
           VorI_menu(VorI);
@@ -257,20 +225,19 @@ void functionmenu (int posicion) {
         TFTscreen.setTextSize(1);
         switch (VorI) {
           case 0:
-            screen_armonicos("Armonicos   THDv=", "V  =       V  V  =       V");
+           // screen_armonicos("Armonicos   THDv=", "V  =       V  V  =       V");
             break;
           case 1:
-            screen_armonicos("Armonicos   THDi=", "I  =       A  I  =       A");
+            //screen_armonicos("Armonicos   THDi=", "I  =       A  I  =       A");
             break;
         }
-        desactive_Boton();
         Timer3.start();
       }
 
       while (!salir) {
         if (numero_muestras >= FFTSIZE) {
           Timer3.stop();
-          active_Boton();
+          Serial.println("while !salir case 5...");
           //time_start = micros();
           numero_muestras = -10;
           //calc_offset(); 
@@ -294,7 +261,6 @@ void functionmenu (int posicion) {
           }
           //time_calc  = micros() - time_start;
           if (!salir) {
-            desactive_Boton();
             Timer3.start();
           }
         }
@@ -306,7 +272,6 @@ void functionmenu (int posicion) {
 
   }
   Timer3.stop();
-  active_Boton();
 
   numero_muestras = -10;
   salir = 0;
@@ -320,16 +285,4 @@ void functionmenu (int posicion) {
 
 }
 
-void active_Boton(){
-  attachInterrupt( digitalPinToInterrupt(2), BotonDown, RISING);
-  attachInterrupt( digitalPinToInterrupt(3), BotonOk, RISING);
-  attachInterrupt( digitalPinToInterrupt(4), BotonUp, RISING);
-  attachInterrupt( digitalPinToInterrupt(5), BotonExit, RISING);
-}
 
-void desactive_Boton(){
-  detachInterrupt( digitalPinToInterrupt(2));
-  detachInterrupt( digitalPinToInterrupt(3));
-  detachInterrupt( digitalPinToInterrupt(4));
-  detachInterrupt( digitalPinToInterrupt(5));
-}
