@@ -3,63 +3,69 @@
 #include <TFT.h>  // Arduino LCD library
 #include <SPI.h>
 
+#include <malloc.h>
+#include <stdlib.h>
+#include <stdio.h>
+
 // pin definition for the Due
 #define cs   10
 #define dc   9
 #define rst  8
 
-//Size definition
-#define FFTSIZE 256
-#define HALF_FFTSIZE 128
-
 TFT TFTscreen = TFT(cs, dc, rst);
 
 
 volatile    int         numero_muestras = -10;
-//volatile    int         valorV[FFTSIZE] = { 0};
-//volatile    int         valorV[FFTSIZE] = {2048, 2218, 2384, 2542, 2688, 2820, 2935, 3032, 3110, 3169, 3210, 3233, 3243, 3240, 3228, 3210, 3189, 3168, 3149, 3134, 3125, 3122, 3126, 3137, 3153, 3173, 3196, 3219, 3242, 3261, 3276, 3286, 3289, 3286, 3276, 3261, 3242, 3219, 3196, 3173, 3153, 3137, 3126, 3122, 3125, 3134, 3149, 3168, 3189, 3210, 3228, 3240, 3243, 3233, 3210, 3169, 3110, 3032, 2935, 2820, 2688, 2542, 2384, 2218, 2048, 1878, 1712, 1554, 1408, 1276, 1161, 1064, 986, 927, 886, 863, 853, 856, 868, 886, 907, 928, 947, 962, 971, 974, 970, 959, 943, 923, 900, 877, 854, 835, 820, 810, 807, 810, 820, 835, 854, 877, 900, 923, 943, 959, 970, 974, 971, 962, 947, 928, 907, 886, 868, 856, 853, 863, 886, 927, 986, 1064, 1161, 1276, 1408, 1554, 1712, 1878, 2048, 2218, 2384, 2542, 2688, 2820, 2935, 3032, 3110, 3169, 3210, 3233, 3243, 3240, 3228, 3210, 3189, 3168, 3149, 3134, 3125, 3122, 3126, 3137, 3153, 3173, 3196, 3219, 3242, 3261, 3276, 3286, 3289, 3286, 3276, 3261, 3242, 3219, 3196, 3173, 3153, 3137, 3126, 3122, 3125, 3134, 3149, 3168, 3189, 3210, 3228, 3240, 3243, 3233, 3210, 3169, 3110, 3032, 2935, 2820, 2688, 2542, 2384, 2218, 2048, 1878, 1712, 1554, 1408, 1276, 1161, 1064, 986, 927, 886, 863, 853, 856, 868, 886, 907, 928, 947, 962, 971, 974, 970, 959, 943, 923, 900, 877, 854, 835, 820, 810, 807, 810, 820, 835, 854, 877, 900, 923, 943, 959, 970, 974, 971, 962, 947, 928, 907, 886, 868, 856, 853, 863, 886, 927, 986, 1064, 1161, 1276, 1408, 1554, 1712, 1878};
+volatile    int         valorV[FFT_SIZE] = { 0};
+//volatile    int         valorV[FFT_SIZE]={2048,2218,2384,2542,2688,2820,2935,3032,3110,3169,3210,3233,3243,3240,3228,3210,3189,3168,3149,3134,3125,3122,3126,3137,3153,3173,3196,3219,3242,3261,3276,3286,3289,3286,3276,3261,3242,3219,3196,3173,3153,3137,3126,3122,3125,3134,3149,3168,3189,3210,3228,3240,3243,3233,3210,3169,3110,3032,2935,2820,2688,2542,2384,2218,2048,1878,1712,1554,1408,1276,1161,1064,986,927,886,863,853,856,868,886,907,928,947,962,971,974,970,959,943,923,900,877,854,835,820,810,807,810,820,835,854,877,900,923,943,959,970,974,971,962,947,928,907,886,868,856,853,863,886,927,986,1064,1161,1276,1408,1554,1712,1878,2048,2218,2384,2542,2688,2820,2935,3032,3110,3169,3210,3233,3243,3240,3228,3210,3189,3168,3149,3134,3125,3122,3126,3137,3153,3173,3196,3219,3242,3261,3276,3286,3289,3286,3276,3261,3242,3219,3196,3173,3153,3137,3126,3122,3125,3134,3149,3168,3189,3210,3228,3240,3243,3233,3210,3169,3110,3032,2935,2820,2688,2542,2384,2218,2048,1878,1712,1554,1408,1276,1161,1064,986,927,886,863,853,856,868,886,907,928,947,962,971,974,970,959,943,923,900,877,854,835,820,810,807,810,820,835,854,877,900,923,943,959,970,974,971,962,947,928,907,886,868,856,853,863,886,927,986,1064,1161,1276,1408,1554,1712,1878};
 
-//volatile    int         valorI[FFTSIZE] = { 0};
-//volatile    int         valorI[FFTSIZE] = {2048, 2107, 2166, 2224, 2279, 2333, 2384, 2432, 2476, 2517, 2553, 2586, 2614, 2638, 2657, 2673, 2684, 2692, 2697, 2698, 2697, 2694, 2690, 2684, 2677, 2669, 2662, 2655, 2649, 2644, 2641, 2638, 2638, 2638, 2641, 2644, 2649, 2655, 2662, 2669, 2677, 2684, 2690, 2694, 2697, 2698, 2697, 2692, 2684, 2673, 2657, 2638, 2614, 2586, 2553, 2517, 2476, 2432, 2384, 2333, 2279, 2224, 2166, 2107, 2048, 1989, 1930, 1872, 1817, 1763, 1712, 1664, 1620, 1579, 1543, 1510, 1482, 1458, 1439, 1423, 1412, 1404, 1399, 1398, 1399, 1402, 1406, 1412, 1419, 1427, 1434, 1441, 1447, 1452, 1455, 1458, 1458, 1458, 1455, 1452, 1447, 1441, 1434, 1427, 1419, 1412, 1406, 1402, 1399, 1398, 1399, 1404, 1412, 1423, 1439, 1458, 1482, 1510, 1543, 1579, 1620, 1664, 1712, 1763, 1817, 1872, 1930, 1989, 2048, 2107, 2166, 2224, 2279, 2333, 2384, 2432, 2476, 2517, 2553, 2586, 2614, 2638, 2657, 2673, 2684, 2692, 2697, 2698, 2697, 2694, 2690, 2684, 2677, 2669, 2662, 2655, 2649, 2644, 2641, 2638, 2638, 2638, 2641, 2644, 2649, 2655, 2662, 2669, 2677, 2684, 2690, 2694, 2697, 2698, 2697, 2692, 2684, 2673, 2657, 2638, 2614, 2586, 2553, 2517, 2476, 2432, 2384, 2333, 2279, 2224, 2166, 2107, 2048, 1989, 1930, 1872, 1817, 1763, 1712, 1664, 1620, 1579, 1543, 1510, 1482, 1458, 1439, 1423, 1412, 1404, 1399, 1398, 1399, 1402, 1406, 1412, 1419, 1427, 1434, 1441, 1447, 1452, 1455, 1458, 1458, 1458, 1455, 1452, 1447, 1441, 1434, 1427, 1419, 1412, 1406, 1402, 1399, 1398, 1399, 1404, 1412, 1423, 1439, 1458, 1482, 1510, 1543, 1579, 1620, 1664, 1712, 1763, 1817, 1872, 1930, 1989};
+volatile    int         valorI[FFT_SIZE] = { 0};
+//volatile    int         valorI[FFT_SIZE]={2048,2107,2166,2224,2279,2333,2384,2432,2476,2517,2553,2586,2614,2638,2657,2673,2684,2692,2697,2698,2697,2694,2690,2684,2677,2669,2662,2655,2649,2644,2641,2638,2638,2638,2641,2644,2649,2655,2662,2669,2677,2684,2690,2694,2697,2698,2697,2692,2684,2673,2657,2638,2614,2586,2553,2517,2476,2432,2384,2333,2279,2224,2166,2107,2048,1989,1930,1872,1817,1763,1712,1664,1620,1579,1543,1510,1482,1458,1439,1423,1412,1404,1399,1398,1399,1402,1406,1412,1419,1427,1434,1441,1447,1452,1455,1458,1458,1458,1455,1452,1447,1441,1434,1427,1419,1412,1406,1402,1399,1398,1399,1404,1412,1423,1439,1458,1482,1510,1543,1579,1620,1664,1712,1763,1817,1872,1930,1989,2048,2107,2166,2224,2279,2333,2384,2432,2476,2517,2553,2586,2614,2638,2657,2673,2684,2692,2697,2698,2697,2694,2690,2684,2677,2669,2662,2655,2649,2644,2641,2638,2638,2638,2641,2644,2649,2655,2662,2669,2677,2684,2690,2694,2697,2698,2697,2692,2684,2673,2657,2638,2614,2586,2553,2517,2476,2432,2384,2333,2279,2224,2166,2107,2048,1989,1930,1872,1817,1763,1712,1664,1620,1579,1543,1510,1482,1458,1439,1423,1412,1404,1399,1398,1399,1402,1406,1412,1419,1427,1434,1441,1447,1452,1455,1458,1458,1458,1455,1452,1447,1441,1434,1427,1419,1412,1406,1402,1399,1398,1399,1404,1412,1423,1439,1458,1482,1510,1543,1579,1620,1664,1712,1763,1817,1872,1930,1989};
 
-//int Vf_r[FFTSIZE]  = { 0};
-//int If_r[FFTSIZE]  = { 0};
-float V_mag[HALF_FFTSIZE] = { 0};     // valor absoluto de I
-//float V_ang[HALF_FFTSIZE] = { 0};     // Ángulos I
-float I_mag[HALF_FFTSIZE] = { 0};     // valor absoluto de I
-//float I_ang[HALF_FFTSIZE] = { 0};     // Ángulos I
+int Vf_r[FFT_SIZE]  = { 0};
+int If_r[FFT_SIZE]  = { 0};
+float V_mag[MIRROR] = { 0};     // valor absoluto de I
+float V_ang[MIRROR] = { 0};     // Ángulos I
+float I_mag[MIRROR] = { 0};     // valor absoluto de I
+float I_ang[MIRROR] = { 0};     // Ángulos I
 float IrmsFFTTHD[40] = { 0};
 float VrmsFFTTHD[40] = { 0};
-//float rms_anterior[40] = { 0};
-//int mag_FastFFT[HALF_FFTSIZE] = { 0};     // Magnitudes
-//int dc_offset = 2048;
-//int SupplyVoltage = 3300;
-//int ADC_COUNTS = 4096;
-//float I_RATIO;
-//float V_RATIO;
-//float FASE_RATIO_TEMP;
-//float FASE_RATIO;
-//int lastFiltered;
+float rms_anterior[40] = { 0};
+int mag_FastFFT[MIRROR] = { 0};     // Magnitudes
+int dc_offset = 2048;
+int SupplyVoltage = 3300;
+int ADC_COUNTS = 4096;
+float I_RATIO;
+float V_RATIO;
+float FASE_RATIO_TEMP;
+float FASE_RATIO;
+int lastFiltered;
 int posicion = 0;
 int posicion_anterior = 0;
 
-//unsigned long time_start;
-//unsigned int  time_calc;
-//float realPower, reactivePower, apparentPower, powerFactor, Vrms, Irms;
-//float realPowerFFT, reactivePowerFFT, apparentPowerFFT, powerFactorFFT, VrmsFFT, IrmsFFT; 
-float THDv=0, THDi=0;
+unsigned long time_start;
+unsigned int  time_calc;
+float realPower, reactivePower, apparentPower, powerFactor, Vrms, Irms;
+float realPowerFFT, reactivePowerFFT, apparentPowerFFT, powerFactorFFT, VrmsFFT, IrmsFFT, THDv, THDi;
+float sqV, sumV, sqI, sumI, instQ, instP, sumP, phaseShiftedV;
+float do_not_remove;
 
-//#define MULTI_VARS_SIZE 8
-//char V[MULTI_VARS_SIZE]="a", I[MULTI_VARS_SIZE]="a", P[MULTI_VARS_SIZE]="a", S[MULTI_VARS_SIZE]="a", Q[MULTI_VARS_SIZE]="a", FP[MULTI_VARS_SIZE]="a", V_FFT[MULTI_VARS_SIZE]="a", I_FFT[MULTI_VARS_SIZE]="a", P_FFT[MULTI_VARS_SIZE]="a", S_FFT[MULTI_VARS_SIZE]="a", Q_FFT[MULTI_VARS_SIZE]="a", FP_FFT[MULTI_VARS_SIZE]="a";
-//#define THD_VARS_SIZE 6
-//char arm_1[THD_VARS_SIZE]="a", arm_2[THD_VARS_SIZE]="a", THD_var[THD_VARS_SIZE]="a";
+#define MULTI_VARS_SIZE 8
+char V[MULTI_VARS_SIZE], I[MULTI_VARS_SIZE], P[MULTI_VARS_SIZE], S[MULTI_VARS_SIZE], Q[MULTI_VARS_SIZE], FP[MULTI_VARS_SIZE], V_FFT[MULTI_VARS_SIZE], I_FFT[MULTI_VARS_SIZE], P_FFT[MULTI_VARS_SIZE], S_FFT[MULTI_VARS_SIZE], Q_FFT[MULTI_VARS_SIZE], FP_FFT[MULTI_VARS_SIZE];
+#define THD_VARS_SIZE 6
+char arm_1[THD_VARS_SIZE], arm_2[THD_VARS_SIZE], THD_var[THD_VARS_SIZE];
 
 volatile bool up = 0;
 volatile bool down = 0;
 volatile bool ok = 0;
-volatile bool salir = 0;
-bool VorI = 0;
+volatile bool salir = 1;
 long T0 = 0 ;
+
+// Memory
+extern char _end;
+extern "C" char *sbrk(int i);
+char *ramstart = (char *)0x20070000;
+char *ramend = (char *)0x20088000;
 
 void setup()
 {
@@ -67,10 +73,13 @@ void setup()
   TFTscreen.begin();
   TFTscreen.background(0, 0, 0);
   screenmenu(posicion, posicion_anterior);
-  //ratio_setup(248.8, 30.5, 1);
-  //adc_setup ();
+  ratio_setup(248.8, 30.5, 1);
+  adc_setup ();
   Timer3.attachInterrupt(muestreo).setFrequency(6400);
-  active_Boton();
+  attachInterrupt( digitalPinToInterrupt(2), BotonDown, RISING);
+  attachInterrupt( digitalPinToInterrupt(3), BotonOk, RISING);
+  attachInterrupt( digitalPinToInterrupt(4), BotonUp, RISING);
+  attachInterrupt( digitalPinToInterrupt(5), BotonExit, RISING);
 }
 
 Radix4     radix;
@@ -104,18 +113,19 @@ void loop()
 }
 
 
-/*void calcVI()
+void calcVI()
 {
   //Reset accumulators
-  float sqV=0, sumV=0, sqI=0, sumI=0, instP=0, sumP=0, phaseShiftedV=0;
-
+  sumV = 0;
+  sumI = 0;
+  sumP = 0;
 
   //-------------------------------------------------------------------------------------------------------------------------
   // 1) Lazo de medida
   //-------------------------------------------------------------------------------------------------------------------------
 
 
-  for ( uint16_t i = 0; i < FFTSIZE; i++)
+  for ( uint16_t i = 0; i < FFT_SIZE; i++)
   {
 
 
@@ -154,49 +164,49 @@ void loop()
   //Calculation of the root of the mean of the voltage and current squared (rms)
   //Calibration coefficients applied.
 
-  Vrms = V_RATIO * sqrt(sumV / FFTSIZE);                      //Aproximación para entornos de programación
-  Irms = I_RATIO * sqrt(sumI / FFTSIZE);
+  Vrms = V_RATIO * sqrt(sumV / FFT_SIZE);                      //Aproximación para entornos de programación
+  Irms = I_RATIO * sqrt(sumI / FFT_SIZE);
 
 
   //Calculation power values
-  realPower = V_RATIO * I_RATIO * sumP / FFTSIZE;
+  realPower = V_RATIO * I_RATIO * sumP / FFT_SIZE;
   apparentPower = Vrms * Irms;
   powerFactor = realPower / apparentPower;
   reactivePower = sqrt((apparentPower * apparentPower) - (realPower * realPower));
 
 
   //--------------------------------------------------------------------------------------
-}*/
+}
 
 
 
 /*void prnt_out(volatile int *array, int dlina)
   {
-  Serial.print("\n\t");
+  //Serial.print("\n\t");
   for ( uint32_t i = 0; i < dlina; i++)
   {
-    Serial.print(array[i]);
-    Serial.print("\t");
-    if ((i + 1) % 16 == 0) Serial.print("\n\t");
+    //Serial.print(array[i]);
+    //Serial.print("\t");
+    if ((i + 1) % 16 == 0) //Serial.print("\n\t");
     }
-  Serial.println("\n\t");
+  //Serial.println("\n\t");
   }
 
   void prnt_out2( float *array, int dlina)
   {
-  Serial.print("\n\t");
+  //Serial.print("\n\t");
   for ( uint32_t i = 0; i < dlina; i++)
   {
-    Serial.print(array[i]);
-    Serial.print("\t");
-    if ((i + 1) % 16 == 0) Serial.print("\n\t");
+    //Serial.print(array[i]);
+    //Serial.print("\t");
+    if ((i + 1) % 16 == 0) //Serial.print("\n\t");
     }
-  Serial.println("\n\t");
+  //Serial.println("\n\t");
   }*/
 
 
 
-/*void adc_setup ()
+void adc_setup ()
 {
   ADC->ADC_CR &= 0x00;                      //ADC en Stop
   ADC->ADC_MR |= 0x80000000;                //ADC en modo normal, no freerun. Modo secuencial activo.
@@ -204,31 +214,23 @@ void loop()
   ADC->ADC_CHER = 0xC0;                     //Habilita canal 7 y 6(¿Se corresponde con pin A0?)
   ADC->ADC_SEQR1 = 0x67000000;              //Convierte los canales 7 y 6
   ADC->ADC_IER |= 0xC0;
-}*/
+}
 
-void muestreo(){
-  //ADC->ADC_CR |= 0x02;                       //start ADC
-  //while ((ADC->ADC_ISR & 0xC0) == 0x00);
-  if (numero_muestras >= 0 && numero_muestras < FFTSIZE) {
-    //valorV[numero_muestras] = ADC->ADC_CDR[7]; //Cuidado, corresponde con el pin A0??
-    //valorI[numero_muestras] = ADC->ADC_CDR[6]; //Pin A1*/
+void muestreo()
+{
+  //t=micros();
+  //detachInterrupt( digitalPinToInterrupt(5));
+  ADC->ADC_CR |= 0x02;                       //start ADC
+  while ((ADC->ADC_ISR & 0xC0) == 0x00);
+  if (numero_muestras >= 0) {
+    valorV[numero_muestras] = ADC->ADC_CDR[7]; //Cuidado, corresponde con el pin A0??
+    valorI[numero_muestras] = ADC->ADC_CDR[6]; //Pin A1*/
   }
-
-  /*
-   * Para coger muestras al paso por cero. Es necesario definir paso_cero y ponerla a cero en los mismos casos que numero_muestras. 
-   * Numero_muestras tendremos que volver a poner a cero en lugar de a menos 10.
-   * if(valorV[numero_muestras]>dc_offset+100 || valorV[numero_muestras]<dc_offset-100 && paso_cero==0){
-   * numero_muestras=0;
-   * }
-   * else
-   * {
-   * paso_cero=1;
-   * numero_muestras++;
-   * }
-   */
 
 
   numero_muestras++;
+  //attachInterrupt( digitalPinToInterrupt(5), BotonExit, RISING);
+
 }
 
 void BotonUp()
@@ -260,29 +262,29 @@ void BotonOk()
 
 void BotonExit()
 {
+  //Timer3.stop();
   if ( millis() > T0  + 250)
-  { 
-    salir = 1;
+  { salir = 0;
     T0 = millis();
   }
 }
 
-/*void ratio_setup(float VCAL, float ICAL, float Fase_Cal)
+void ratio_setup(float VCAL, float ICAL, float Fase_Cal)
 {
   FASE_RATIO = ((SupplyVoltage / 1000.0) / (ADC_COUNTS));
   I_RATIO = ICAL * FASE_RATIO;
   V_RATIO = VCAL * FASE_RATIO;     // VCAL*3,3/ADC_COUNTS
   FASE_RATIO_TEMP = Fase_Cal;
-}*/
+}
 
-/*void calc_FFT(int *f_r, float *magf, float *angf, float RATIO, float RATIO_ang)
+void calc_FFT(int *f_r, float *magf, float *angf, float RATIO, float RATIO_ang)
 {
-  int         mag[HALF_FFTSIZE]     = { 0};
-  int         ang[HALF_FFTSIZE]     = { 0};
-  int         f_i[FFTSIZE]   = { 0};
+  int         mag[MIRROR]     = { 0};
+  int         ang[MIRROR]     = { 0};
+  int         f_i[FFT_SIZE]   = { 0};
 
   //time_start = micros();
-  radix.rev_bin( f_r, FFTSIZE);
+  radix.rev_bin( f_r, FFT_SIZE);
 
   radix.fft_radix4_I( f_r, f_i, LOG2_FFT);
 
@@ -297,66 +299,73 @@ void BotonExit()
 
   //time_calc  = micros() - time_start;
 
-}*/
+}
 
-/*void post_FFT(float *V_mag, float *V_ang, float *I_mag, float *I_ang) {
-  float sqVFFT=0, sumVFFT=0, sqIFFT=0, sumIFFT=0, instPFFT=0, sumPFFT=0, desfase = 0;
-  
+void post_FFT(float *V_mag, float *V_ang, float *I_mag, float *I_ang) {
+  do_not_remove = 0;
+  sumV = 0;
+  sumI = 0;
+  sumP = 0;
+  float desfase = 0;
   for (int i = 2; i < 81; i = i + 2) {
 
-    sqVFFT = V_mag[i] * V_mag[i];
-    sumVFFT += sqVFFT;
-    sqIFFT = I_mag[i] * I_mag[i];
-    sumIFFT += sqIFFT;
+    sqV = V_mag[i] * V_mag[i];
+    sumV += sqV;
+    sqI = I_mag[i] * I_mag[i];
+    sumI += sqI;
     desfase = V_ang[i] - I_ang[i];
-    instPFFT = V_mag[i] * I_mag[i] * cos(desfase);
-    sumPFFT += instPFFT;
+    instP = V_mag[i] * I_mag[i] * cos(desfase);
+    sumP += instP;
   }
 
-  VrmsFFT = sqrt((sumVFFT / 2) + (V_mag[0] * V_mag[0]));
-  IrmsFFT = sqrt((sumIFFT / 2) + (I_mag[0] * I_mag[0]));
-  realPowerFFT = sumPFFT / 2;
+  VrmsFFT = sqrt((sumV / 2) + (V_mag[0] * V_mag[0]));
+  IrmsFFT = sqrt((sumI / 2) + (I_mag[0] * I_mag[0]));
+  realPowerFFT = sumP / 2;
   apparentPowerFFT = VrmsFFT * IrmsFFT;
   reactivePowerFFT = sqrt((apparentPowerFFT * apparentPowerFFT) - (realPowerFFT * realPowerFFT));
   powerFactorFFT = realPowerFFT / apparentPowerFFT;
-}*/
-
-void THD(float *mag, float *RMS_arm, float &THDx) {
-  //Reset accumulators
-  float sum = 0;
-  float cuadrado=0;
-  
-  RMS_arm[1] = mag[2] / sqrt(2);
-
-  for (int i = 2; i <= 40; i++) {                   //Poner 40 como  define
-    RMS_arm[i] = mag[2*i]/sqrt(2);
-    cuadrado = RMS_arm[i] * RMS_arm[i];
-    sum += cuadrado;
-  }
-
-  THDx = (sqrt(sum) / RMS_arm [1]) * 100;
-
 }
 
-/*void calc_FastFFT(int *f_r, int *mag_Fast)
+void THD(float *V_mag, float *I_mag) {
+  //Reset accumulators
+  sumV = 0;
+  sumI = 0;
+
+  VrmsFFTTHD[1] = V_mag[2] / sqrt(2);
+  IrmsFFTTHD[1] = I_mag[2] / sqrt(2);
+
+  for (int i = 4; i < 81; i = i + 2) {
+    VrmsFFTTHD[i / 2] = V_mag[i] / sqrt(2);
+    IrmsFFTTHD[i / 2] = I_mag[i] / sqrt(2);
+    sqV = VrmsFFTTHD[i / 2] * VrmsFFTTHD[i / 2];
+    sumV += sqV;
+    sqI = IrmsFFTTHD[i / 2] * IrmsFFTTHD[i / 2];
+    sumI += sqI;
+  }
+
+  THDv = (sqrt(sumV) / VrmsFFTTHD[1]) * 100;
+  THDi = (sqrt(sumI) / IrmsFFTTHD[1]) * 100;
+}
+
+void calc_FastFFT(int *f_r)
 {
-  int         mag[HALF_FFTSIZE]     = { 0};
-  int         ang[HALF_FFTSIZE]     = { 0};
-  int         f_i[FFTSIZE]   = { 0};
+  int         mag[MIRROR]     = { 0};
+  int         ang[MIRROR]     = { 0};
+  int         f_i[FFT_SIZE]   = { 0};
 
   //time_start = micros();
-  radix.rev_bin( f_r, FFTSIZE);
+  radix.rev_bin( f_r, FFT_SIZE);
 
   radix.fft_radix4_I( f_r, f_i, LOG2_FFT);
 
   radix.gain_Reset( f_r, LOG2_FFT - 1);         //La amplitud del armónico según la función fft es igual a la amplitud de la señal de entrada por la mitad del número de muestras.
   radix.gain_Reset( f_i, LOG2_FFT - 1);
 
-  radix.get_Magnit2( f_r, f_i, mag_Fast);
+  radix.get_Magnit2( f_r, f_i, mag_FastFFT);
   //time_calc  = micros() - time_start;
 
 
-}*/
+}
 
 void screenmenu (int posicion, int arriba) {
   TFTscreen.stroke(0, 0, 0);
@@ -438,18 +447,18 @@ void VorI_menu(bool VorI) {
 }
 
 void functionmenu (int posicion) {
-  salir = 0;
-  VorI = 0;
-  bool salir2 = 0;
+  salir = 1;
+  bool VorI = 0;
+  bool salir2 = 1;
   TFTscreen.background(0, 0, 0);
   TFTscreen.stroke(255, 255, 255);
   TFTscreen.setTextSize(1);
   switch (posicion) {
     case 0:                                         // Forma de onda. Dominio tiempo.
-      /*TFTscreen.setTextSize(2);
+      TFTscreen.setTextSize(2);
       TFTscreen.text("Forma de onda", 0, 0);
       VorI_menu(VorI);
-      while (!salir && !ok) {
+      while (salir && !ok) {
         if (up || down) {
           VorI = !VorI;
           VorI_menu(VorI);
@@ -457,56 +466,59 @@ void functionmenu (int posicion) {
           down = 0;
         }
       }
-      if (salir) {
-        salir2 = 1;
+      if (!salir) {
+        salir2 = 0;
       } else {
         TFTscreen.background(0, 0, 0);
         TFTscreen.setTextSize(1);
         switch (VorI) {
           case 0:
-            //ejes("t", "V", 8, 10);
+            ejes("t", "V", 8, 10);
             break;
           case 1:
-            //ejes("t", "I", 8, 10);
+            ejes("t", "I", 8, 10);
             break;
         }
-        desactive_Boton();
+        /*detachInterrupt( digitalPinToInterrupt(2));
+          detachInterrupt( digitalPinToInterrupt(3));
+          detachInterrupt( digitalPinToInterrupt(4));*/
         Timer3.start();
       }
 
-      while (!salir) {
-        if (numero_muestras >= FFTSIZE) {
+      while (salir) {
+        if (numero_muestras >= FFT_SIZE) {
           Timer3.stop();
-          active_Boton();
+          attachInterrupt( digitalPinToInterrupt(5), BotonExit, RISING);
           time_start = micros();
           numero_muestras = -10;
           switch (VorI) {
             case 0:
-              onda_sen(valorV, FFTSIZE);
+              //prnt_out(valorV, FFT_SIZE);
+              onda_sen(valorV, FFT_SIZE);
               break;
             case 1:
-              onda_sen(valorI, FFTSIZE);
+              onda_sen(valorI, FFT_SIZE);
               break;
           }
           time_calc = micros() - time_start;
           /*while(time_calc<=200000){                      //Esperar a paso por cero de la onda. Poner en caso de no verse bien la onda
             time_calc  = micros() - time_start;
-            }
-          if (!salir) {
-            desactive_Boton();
+            }*/
+          if (salir) {
+            detachInterrupt( digitalPinToInterrupt(5));
             Timer3.start();
           }
         }
       }
-      Serial.print("\tOnda: ");
-      Serial.println(time_calc);
-      TFTscreen.background(0, 0, 0);*/
+      //Serial.print("\tOnda: ");
+      //Serial.println(time_calc);
+      TFTscreen.background(0, 0, 0);
       break;
     case 1:                                     //Espectrometro
-      /*TFTscreen.setTextSize(2);
+      TFTscreen.setTextSize(2);
       TFTscreen.text("Espectro Frec.", 0, 0);
       VorI_menu(VorI);
-      while (!salir && !ok) {
+      while (salir && !ok) {
         if (up || down) {
           VorI = !VorI;
           VorI_menu(VorI);
@@ -514,112 +526,120 @@ void functionmenu (int posicion) {
           down = 0;
         }
       }
-      if (salir) {
-        salir2 = 1;
+      if (!salir) {
+        salir2 = 0;
       } else {
         TFTscreen.background(0, 0, 0);
         TFTscreen.setTextSize(1);
         switch (VorI) {
           case 0:
-            //ejes("f", "V", 3, 10);
+            ejes("f", "V", 3, 10);
             break;
           case 1:
-            //ejes("f", "I", 3, 10);
+            ejes("f", "I", 3, 10);
             break;
         }
-        desactive_Boton();
+        /*detachInterrupt( digitalPinToInterrupt(2));
+          detachInterrupt( digitalPinToInterrupt(3));
+          detachInterrupt( digitalPinToInterrupt(4));*/
         Timer3.start();
       }
 
-      while (!salir) {
-        if (numero_muestras >= FFTSIZE) {
+      while (salir) {
+        if (numero_muestras >= FFT_SIZE) {
           Timer3.stop();
-          active_Boton();
+          attachInterrupt( digitalPinToInterrupt(5), BotonExit, RISING);
           time_start = micros();
           numero_muestras = -10;
           calc_offset();
           switch (VorI) {
             case 0:
-              calc_FastFFT(Vf_r, mag_FastFFT);
+              calc_FastFFT(Vf_r);
               break;
             case 1:
-              calc_FastFFT(If_r, mag_FastFFT);
+              calc_FastFFT(If_r);
               break;
           }
           espectro_frec40(mag_FastFFT);
           time_calc  = micros() - time_start;
-          if (!salir) {
-            desactive_Boton();
+          if (salir) {
+            detachInterrupt( digitalPinToInterrupt(5));
             Timer3.start();
           }
         }
       }
-      Serial.print("\tFastFFT: ");
-      Serial.println(time_calc);
-      TFTscreen.background(0, 0, 0);*/
+      //Serial.print("\tFastFFT: ");
+      //Serial.println(time_calc);
+      TFTscreen.background(0, 0, 0);
       break;
     case 2:
-      /*TFTscreen.setTextSize(2);
+      TFTscreen.setTextSize(2);
       TFTscreen.text("Mult. temporal", 0, 0);
-      desactive_Boton();
+      /*detachInterrupt( digitalPinToInterrupt(2));
+        detachInterrupt( digitalPinToInterrupt(3));
+        detachInterrupt( digitalPinToInterrupt(4));*/
       Timer3.start();
-      while (!salir) {
-        if (numero_muestras >= FFTSIZE) {
+      while (salir) {
+        if (numero_muestras >= FFT_SIZE) {
           Timer3.stop();
-          active_Boton();
+          attachInterrupt( digitalPinToInterrupt(5), BotonExit, RISING);
           time_start = micros();
           numero_muestras = -10;
           calc_offset();
           calcVI();
           screen_multimeter(Vrms, Irms, realPower, reactivePower, apparentPower, powerFactor);
           time_calc  = micros() - time_start;
-          if (!salir) {
-            desactive_Boton();
+          if (salir) {
+            detachInterrupt( digitalPinToInterrupt(5));
             Timer3.start();
           }
         }
       }
-      Serial.print("\tMultimetro temporal: ");
-      Serial.println(time_calc);
-      TFTscreen.background(0, 0, 0);*/
+      //Serial.print("\tMultimetro temporal: ");
+      //Serial.println(time_calc);
+      TFTscreen.background(0, 0, 0);
       break;
     case 3:
-      /*TFTscreen.setTextSize(2);
+      TFTscreen.setTextSize(2);
       TFTscreen.text("Mult. frecuencial", 0, 0);
-      desactive_Boton();
+      /*detachInterrupt( digitalPinToInterrupt(2));
+        detachInterrupt( digitalPinToInterrupt(3));
+        detachInterrupt( digitalPinToInterrupt(4));*/
       Timer3.start();
-      while (!salir) {
-        if (numero_muestras >= FFTSIZE) {
+      while (salir) {
+        if (numero_muestras >= FFT_SIZE) {
           Timer3.stop();
-          active_Boton();
+          attachInterrupt( digitalPinToInterrupt(5), BotonExit, RISING);
           time_start = micros();
           numero_muestras = -10;
           calc_offset();
           calc_FFT(Vf_r, V_mag, V_ang, V_RATIO, FASE_RATIO);
           calc_FFT(If_r, I_mag, I_ang, I_RATIO, FASE_RATIO);
-          //prnt_out2(V_ang, HALF_FFTSIZE);
-          //prnt_out2(I_ang, HALF_FFTSIZE);
+          //prnt_out2(V_ang, MIRROR);
+          //prnt_out2(I_ang, MIRROR);
           post_FFT(V_mag, V_ang, I_mag, I_ang);
           screen_multimeter(VrmsFFT, IrmsFFT, realPowerFFT, reactivePowerFFT, apparentPowerFFT, powerFactorFFT);
           time_calc  = micros() - time_start;
-          if (!salir) {
-            desactive_Boton();
+          if (salir) {
+            detachInterrupt( digitalPinToInterrupt(5));
             Timer3.start();
           }
         }
       }
-      Serial.print("\tFFT: ");
-      Serial.println(time_calc);
-      TFTscreen.background(0, 0, 0);*/
+      //Serial.print("\tFFT: ");
+      //Serial.println(time_calc);
+      TFTscreen.background(0, 0, 0);
       break;
     case 4:
-      /*screen_temp_vs_FFT();
-      desactive_Boton();
+      screen_temp_vs_FFT();
+      /*detachInterrupt( digitalPinToInterrupt(2));
+        detachInterrupt( digitalPinToInterrupt(3));
+        detachInterrupt( digitalPinToInterrupt(4));*/
       Timer3.start();
-      while (!salir) {
-        if (numero_muestras >= FFTSIZE) {
+      while (salir) {
+        if (numero_muestras >= FFT_SIZE) {
           Timer3.stop();
-          active_Boton();
+          attachInterrupt( digitalPinToInterrupt(5), BotonExit, RISING);
           time_start = micros();
           numero_muestras = -10;
           calc_offset();
@@ -630,21 +650,21 @@ void functionmenu (int posicion) {
           calcVI();
           screen_variables_temp_vs_FFT();
           time_calc  = micros() - time_start;
-          if (!salir) {
-            desactive_Boton();
+          if (salir) {
+            detachInterrupt( digitalPinToInterrupt(5));
             Timer3.start();
           }
         }
       }
-      Serial.print("\tTiempo de calculo temporal vs FFT: ");
-      Serial.println(time_calc);
-      TFTscreen.background(0, 0, 0);*/
+      //Serial.print("\tTiempo de calculo temporal vs FFT: ");
+      //Serial.println(time_calc);
+      TFTscreen.background(0, 0, 0);
       break;
     case 5:
       TFTscreen.setTextSize(2);
       TFTscreen.text("Armonicos", 0, 0);
       VorI_menu(VorI);
-      while (!salir && !ok) {
+      while (salir && !ok) {
         if (up || down) {
           VorI = !VorI;
           VorI_menu(VorI);
@@ -652,91 +672,78 @@ void functionmenu (int posicion) {
           down = 0;
         }
       }
-      if (salir) {
-        salir2 = 1;
+      if (!salir) {
+        salir2 = 0;
       } else {
         TFTscreen.background(0, 0, 0);
         TFTscreen.setTextSize(1);
         switch (VorI) {
           case 0:
-            //screen_armonicos("Armonicos   THDv=", "V  =       V  V  =       V");
+            screen_armonicos("Armonicos   THDv=", "V  =       V  V  =       V");
             break;
           case 1:
-            //screen_armonicos("Armonicos   THDi=", "I  =       A  I  =       A");
+            screen_armonicos("Armonicos   THDi=", "I  =       A  I  =       A");
             break;
         }
-        //desactive_Boton();
+        /*detachInterrupt( digitalPinToInterrupt(2));
+          detachInterrupt( digitalPinToInterrupt(3));
+          detachInterrupt( digitalPinToInterrupt(4));*/
         Timer3.start();
       }
 
-      while (!salir) {
-        if (numero_muestras >= FFTSIZE) {
+      while (salir) {
+        if (numero_muestras >= FFT_SIZE) {
           Timer3.stop();
-          //active_Boton();
-          //time_start = micros();
-          //numero_muestras = -10;
-          //calc_offset(); 
+          attachInterrupt( digitalPinToInterrupt(5), BotonExit, RISING);
+          time_start = micros();
+          numero_muestras = -10;
+          calc_offset();
+          calc_FFT(Vf_r, V_mag, V_ang, V_RATIO, FASE_RATIO);
+          calc_FFT(If_r, I_mag, I_ang, I_RATIO, FASE_RATIO);
+          THD(V_mag, I_mag);
           switch (VorI) {
             case 0:
-              //calc_FFT(Vf_r, V_mag, V_ang, V_RATIO, FASE_RATIO);
-              Serial.println("case V");
-              Serial.println(ok);
-              THD(V_mag, VrmsFFTTHD, THDv);     //ok pasa a 0 sin motivo cada vez que entra
-              Serial.println(ok);
-              //screen_variables_armonicos(THDv, VrmsFFTTHD);
+              printf("case 0\n");
+              delay(1000);
+              //screen_variables_armonicos( THDv, VrmsFFTTHD);
               break;
             case 1:
-              Serial.println("case I: VorI:");
-              Serial.println(VorI);
-              //calc_FFT(If_r, I_mag, I_ang, I_RATIO, FASE_RATIO);
-              THD(I_mag, IrmsFFTTHD, THDi);
-              Serial.println(VorI);
-              //screen_variables_armonicos(THDi, IrmsFFTTHD);
+              printf("case 1\n");
+              //screen_variables_armonicos( THDi, IrmsFFTTHD);
               break;
           }
-          //time_calc  = micros() - time_start;
-          if (!salir) {
-            //desactive_Boton();
+          time_calc  = micros() - time_start;
+          Serial.println(time_calc);
+          if (salir) {
+            detachInterrupt( digitalPinToInterrupt(5));
             Timer3.start();
           }
         }
       }
-      Serial.print("\tArmonicos: ");
-      //Serial.println(time_calc);
+      //Serial.print("\tArmonicos: ");
+      Serial.println(time_calc);
+      //prnt_out2( I_mag, MIRROR);
       TFTscreen.background(0, 0, 0);
       break;
 
   }
   Timer3.stop();
-  //active_Boton();
-
+  /*attachInterrupt( digitalPinToInterrupt(2), BotonDown, RISING);
+    attachInterrupt( digitalPinToInterrupt(3), BotonOk, RISING);
+    attachInterrupt( digitalPinToInterrupt(4), BotonUp, RISING);*/
   numero_muestras = -10;
-  salir = 0;
+  salir = 1;
   up = 0;
   down = 0;
-  if (posicion == 2 || posicion == 3 || posicion == 4 || salir2) {
+  if (posicion == 2 || posicion == 3 || posicion == 4 || !salir2) {
     screenmenu(posicion, posicion_anterior);
     ok = 0;
   }
 
 }
 
-void active_Boton(){
-  attachInterrupt( digitalPinToInterrupt(2), BotonDown, RISING);
-  attachInterrupt( digitalPinToInterrupt(3), BotonOk, RISING);
-  attachInterrupt( digitalPinToInterrupt(4), BotonUp, RISING);
-  attachInterrupt( digitalPinToInterrupt(5), BotonExit, RISING);
-}
-
-void desactive_Boton(){
-  detachInterrupt( digitalPinToInterrupt(2));
-  detachInterrupt( digitalPinToInterrupt(3));
-  detachInterrupt( digitalPinToInterrupt(4));
-  detachInterrupt( digitalPinToInterrupt(5));
-}
-
-/*void calc_offset() {
-  for ( uint16_t i = 0; i < FFTSIZE; i++ )
+void calc_offset() {
+  for ( uint16_t i = 0; i < FFT_SIZE; i++ )
   {
 
     Vf_r[i] = (valorV[i] - dc_offset);
@@ -752,6 +759,10 @@ void onda_sen(volatile int *onda, int longitud) {
   int muestra;
   int muestra_anterior = 59;
 
+  /*TFTscreen.noStroke();
+    TFTscreen.fill(0, 0, 0);                          //Color negro
+    TFTscreen.rect(xPos-1, 0, 160, 118);                  //Borrar pantalla completa. (Ver si tomando muestras reales es mejor borrar posicion que vamos a pintar, al igual que hacíamos en v1)
+    TFTscreen.stroke(255, 255, 255);                      //Blanco*/
 
   for (int i = 0; i < longitud; i = i + 2) {
 
@@ -769,7 +780,7 @@ void onda_sen(volatile int *onda, int longitud) {
       TFTscreen.line(xPos, 0, xPos, 118);                   //borrar posicion que vamos a pintar
       TFTscreen.stroke(255, 255, 255);                      //Blanco*/
 
-    /*TFTscreen.line(xPos - 2, muestra_anterior, xPos, muestra); //Representar linea desde posición anterior hasta posicion actual
+    TFTscreen.line(xPos - 2, muestra_anterior, xPos, muestra); //Representar linea desde posición anterior hasta posicion actual
     muestra_anterior = muestra;
 
     xPos = xPos + 2;
@@ -785,12 +796,12 @@ void onda_sen(volatile int *onda, int longitud) {
       } else {
       // increment the horizontal position:
       xPos=xPos+2;
-      }
+      }*/
   }
 
-}*/
+}
 
-/*void espectro_frec(int *frec, int longitud) {
+void espectro_frec(int *frec, int longitud) {
 
 
   int xPos = 33;
@@ -806,7 +817,7 @@ void onda_sen(volatile int *onda, int longitud) {
       TFTscreen.line(xPos, 0, xPos, 118);                   //borrar posicion que vamos a pintar
       TFTscreen.stroke(255, 255, 255);                      //Blanco*/
 
-    /*TFTscreen.line(xPos, 118, xPos, 118 - muestra);           //Representar amplitud de la frec
+    TFTscreen.line(xPos, 118, xPos, 118 - muestra);           //Representar amplitud de la frec
 
     // if the graph has reached the screen edge
     // erase the screen and start again
@@ -999,7 +1010,7 @@ void espectro_frec40(int *frec) {
   int xPos = 34;
   int muestra;
 
-  for (int i = 2; i < 81; i = i + 2) {                                  //ver si se puede cambiar el 81 por 40
+  for (int i = 2; i < 81; i = i + 2) {
 
     int amplitud = frec[i];
 
@@ -1010,7 +1021,7 @@ void espectro_frec40(int *frec) {
     TFTscreen.line(xPos + 1, 0, xPos + 1, 118);               //borrar posicion que vamos a pintar
     TFTscreen.stroke(255, 255, 255);                      //Blanco */
 
-    /*TFTscreen.line(xPos, 118, xPos, (118 - muestra));           //Representar amplitud de la frec
+    TFTscreen.line(xPos, 118, xPos, (118 - muestra));           //Representar amplitud de la frec
     TFTscreen.line(xPos + 1, 118, xPos + 1, (118 - muestra));       //Representar amplitud de la frec
 
     xPos = xPos + 3;
@@ -1027,12 +1038,12 @@ void espectro_frec40(int *frec) {
       // increment the horizontal position:
       xPos=xPos+3;
       }*/
-  //}
+  }
 
-//}
+}
 
 
-/*void ejes(char *abscisas, char *ordenadas, int xDiv, int yDiv) {
+void ejes(char *abscisas, char *ordenadas, int xDiv, int yDiv) {
   TFTscreen.text(ordenadas, 0, 0);
   TFTscreen.text(abscisas, 155, 120);
   TFTscreen.line(32, 0, 32, 128);
@@ -1065,12 +1076,17 @@ void screen_armonicos (char *titulo, char *variable) {
     TFTscreen.text(num_1, 6, y);
     TFTscreen.text(num_2, 90, y);
   }
-}*/
+}
 
-/*void screen_variables_armonicos(float THD_calc, float *rms) {
+void screen_variables_armonicos(float THD_calc, float *rms) {
+  freeRam();
+
   String num_armonico;
+
   float num = 0;
+  Serial.println("variables armonicos");
   int a = 0;
+  Serial.println("variables armonicos");
   num = THD_calc;
   num_armonico = String(num);
   TFTscreen.stroke(0, 0, 0);
@@ -1098,5 +1114,15 @@ void screen_armonicos (char *titulo, char *variable) {
     TFTscreen.text(arm_1, 28, y);
     TFTscreen.text(arm_2, 112, y);
   }
-}*/
+}
+
+int freeRam () {
+  char *heapend = sbrk(0);
+  register char * stack_ptr asm ("sp");
+  struct mallinfo mi = mallinfo();
+  printf("\nDynamic ram used: %d\n", mi.uordblks);
+  printf("Program static ram used %d\n", &_end - ramstart);
+  printf("Stack ram used %d\n\n", ramend - stack_ptr);
+  printf("My guess at free mem: %d\n", stack_ptr - heapend + mi.fordblks);
+}
 
