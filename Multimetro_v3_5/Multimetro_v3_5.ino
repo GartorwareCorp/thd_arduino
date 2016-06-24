@@ -40,8 +40,6 @@ void setup()
   TFTscreen.begin();
   TFTscreen.background(0, 0, 0);
   screenmenu(posicion, posicion_anterior);
-  //ratio_setup(248.8, 30.5, 1);
-  //adc_setup ();
   Timer3.attachInterrupt(muestreo).setFrequency(6400);
   active_Boton();
 }
@@ -78,14 +76,10 @@ void loop()
 }
 
 void muestreo(){
-  ADC->ADC_CR |= 0x02;                       //start ADC
-  while ((ADC->ADC_ISR & 0xC0) == 0x00);
-  if (numero_muestras >= 0 && numero_muestras < FFTSIZE) {
-    //valorV[numero_muestras] = ADC->ADC_CDR[7]; //Cuidado, corresponde con el pin A0??
-    //valorI[numero_muestras] = ADC->ADC_CDR[6]; //Pin A1*/
+  if (numero_muestras >= 0 && numero_muestras < FFTSIZE) {  
+    for(int i= 0; i < 10000; i++);
   }
-
-  numero_muestras++;
+      numero_muestras++;
 }
 
 void BotonUp()
@@ -126,19 +120,7 @@ void BotonExit()
 
 void THD(float *mag, float *RMS_arm, float &THDx) {
   //Reset accumulators
-  float sum = 0;
-  float cuadrado=0;
-  
-  RMS_arm[1] = mag[2] / sqrt(2);
-
-  for (int i = 2; i <= 40; i++) {                   //Poner 40 como  define
-    RMS_arm[i] = mag[2*i]/sqrt(2);
-    cuadrado = RMS_arm[i] * RMS_arm[i];
-    sum += cuadrado;
-  }
-
-  THDx = (sqrt(sum) / RMS_arm [1]) * 100;
-
+  Serial.print("THD");
 }
 
 void screenmenu (int posicion, int arriba) {
@@ -239,7 +221,7 @@ void functionmenu (int posicion) {
     case 4:
       break;
     case 5:
-      TFTscreen.setTextSize(2);
+      //TFTscreen.setTextSize(2);
       TFTscreen.text("Armonicos", 0, 0);
       VorI_menu(VorI);
       while (!salir && !ok) {
@@ -263,50 +245,35 @@ void functionmenu (int posicion) {
             screen_armonicos("Armonicos   THDi=", "I  =       A  I  =       A");
             break;
         }
-        desactive_Boton();
         Timer3.start();
       }
 
       while (!salir) {
         if (numero_muestras >= FFTSIZE) {
           Timer3.stop();
-          active_Boton();
-          //time_start = micros();
           numero_muestras = -10;
-          //calc_offset(); 
           switch (VorI) {
             case 0:
-              //calc_FFT(Vf_r, V_mag, V_ang, V_RATIO, FASE_RATIO);
               Serial.println("case V");
-              Serial.println(ok);
               THD(V_mag, VrmsFFTTHD, THDv);     //ok pasa a 0 sin motivo cada vez que entra
-              Serial.println(ok);
-              //screen_variables_armonicos(THDv, VrmsFFTTHD);
               break;
             case 1:
-              Serial.println("case I: VorI:");
-              Serial.println(VorI);
+              Serial.println("case I:");
               //calc_FFT(If_r, I_mag, I_ang, I_RATIO, FASE_RATIO);
               THD(I_mag, IrmsFFTTHD, THDi);
-              Serial.println(VorI);
-              //screen_variables_armonicos(THDi, IrmsFFTTHD);
               break;
           }
-          //time_calc  = micros() - time_start;
           if (!salir) {
-            desactive_Boton();
             Timer3.start();
           }
         }
+        delay(1);
       }
       Serial.print("\tArmonicos: ");
       //Serial.println(time_calc);
       TFTscreen.background(0, 0, 0);
       break;
-
   }
-  Timer3.stop();
-  active_Boton();
 
   numero_muestras = -10;
   salir = 0;
@@ -325,11 +292,4 @@ void active_Boton(){
   attachInterrupt( digitalPinToInterrupt(3), BotonOk, RISING);
   attachInterrupt( digitalPinToInterrupt(4), BotonUp, RISING);
   attachInterrupt( digitalPinToInterrupt(5), BotonExit, RISING);
-}
-
-void desactive_Boton(){
-  detachInterrupt( digitalPinToInterrupt(2));
-  detachInterrupt( digitalPinToInterrupt(3));
-  detachInterrupt( digitalPinToInterrupt(4));
-  detachInterrupt( digitalPinToInterrupt(5));
 }
