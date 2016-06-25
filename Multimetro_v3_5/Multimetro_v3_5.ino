@@ -31,7 +31,6 @@ float I_mag[HALF_FFTSIZE] = { 0};     // valor absoluto de I
 float I_ang[HALF_FFTSIZE] = { 0};     // Ángulos I
 float IrmsFFTTHD[40] = { 0};
 float VrmsFFTTHD[40] = { 0};
-float rms_anterior[40] = { 0};
 int mag_FastFFT[HALF_FFTSIZE] = { 0};     // Magnitudes
 int dc_offset = 2048;
 int SupplyVoltage = 3300;
@@ -53,7 +52,7 @@ float THDv=0, THDi=0;
 #define MULTI_VARS_SIZE 8
 char V[MULTI_VARS_SIZE], I[MULTI_VARS_SIZE], P[MULTI_VARS_SIZE], S[MULTI_VARS_SIZE], Q[MULTI_VARS_SIZE], FP[MULTI_VARS_SIZE], V_FFT[MULTI_VARS_SIZE], I_FFT[MULTI_VARS_SIZE], P_FFT[MULTI_VARS_SIZE], S_FFT[MULTI_VARS_SIZE], Q_FFT[MULTI_VARS_SIZE], FP_FFT[MULTI_VARS_SIZE];
 #define THD_VARS_SIZE 6
-char arm_1[THD_VARS_SIZE], arm_2[THD_VARS_SIZE], THD_var[THD_VARS_SIZE];
+
 
 volatile bool up = 0;
 volatile bool down = 0;
@@ -61,6 +60,9 @@ volatile bool ok = 0;
 volatile bool salir = 0;
 bool VorI = 0;
 long T0 = 0 ;
+//Variables screen_variables_armonicos
+float rms_anterior[40] = { 0};              //rms para borrar pantalla en screen_variables_armonicos
+float THD_anterior=0;                       //THD para borrar pantalla en screen_variables_armonicos
 
 void setup()
 {
@@ -1040,36 +1042,39 @@ void screen_armonicos (char *titulo, char *variable) {
   }
 }
 
-/*void screen_variables_armonicos(float THD_calc, float *rms) {
-  String num_armonico;
-  float num = 0;
-  int a = 0;
-  num = THD_calc;
-  num_armonico = String(num);
-  TFTscreen.stroke(0, 0, 0);
-  TFTscreen.text(THD_var, 120, 0);
+void screen_variables_armonicos(float THD_calc, float *rms) {
+  char arm_pares[THD_VARS_SIZE], arm_impares[THD_VARS_SIZE], THD_var[THD_VARS_SIZE];
+  String num_armonico;                                        //string temporal, luego se convierte a char array correspondientes THD_var,arm_pares y arm_impares
+  int armonico = 0;
+  num_armonico = String(THD_anterior);                        //Float a string THD anterior
   num_armonico.toCharArray(THD_var, THD_VARS_SIZE);
-  TFTscreen.stroke(255, 255, 255);
-  TFTscreen.text(THD_var, 120, 0);
-  for (int y = 12; y < 128; y = y + 12) {
-    a++;
-    TFTscreen.stroke(0, 0, 0);
-    num_armonico = String(rms_anterior[a]);
-    num_armonico.toCharArray(arm_1, THD_VARS_SIZE);
-    TFTscreen.text(arm_1, 28, y);
-    num_armonico = String(rms[a]);
-    num_armonico.toCharArray(arm_1, THD_VARS_SIZE);
-    rms_anterior[a] = rms[a];
-    a++;
-    num_armonico = String(rms_anterior[a]);
-    num_armonico.toCharArray(arm_2, THD_VARS_SIZE);
-    TFTscreen.text(arm_2, 112, y);
-    num_armonico = String(rms[a]);
-    num_armonico.toCharArray(arm_2, THD_VARS_SIZE);
-    rms_anterior[a] = rms[a];
-    TFTscreen.stroke(255, 255, 255);
-    TFTscreen.text(arm_1, 28, y);
-    TFTscreen.text(arm_2, 112, y);
+  TFTscreen.stroke(0, 0, 0);                                  //Texto color negro
+  TFTscreen.text(THD_var, 120, 0);                            //Borrar THD anterior
+  THD_anterior = THD_calc;                                    //Guardar THD para luego borrar
+  num_armonico = String(THD_calc);                            //Float a string THD actual
+  num_armonico.toCharArray(THD_var, THD_VARS_SIZE);
+  TFTscreen.stroke(255, 255, 255);                            //Texto blanco
+  TFTscreen.text(THD_var, 120, 0);                            //Escribe variable actual
+  for (int i = 0; i < PRIMEROS40_ARM/2; i++)                   
+  {
+    int y=12*i+12;                                            //128Pixeles en eje y, escribimos cada 12 una linea con armonico par e impar
+    TFTscreen.stroke(0, 0, 0);                                //Texto color negro
+    num_armonico = String(rms_anterior[armonico]);            //Float rms par anterior a string
+    num_armonico.toCharArray(arm_pares, THD_VARS_SIZE);       //String a chararray
+    TFTscreen.text(arm_pares, 28, y);                         //Escribir en negro rms anterior, es decir, borrar armonicos pares
+    num_armonico = String(rms[armonico]);                     //Float rms par actual a string
+    num_armonico.toCharArray(arm_pares, THD_VARS_SIZE);
+    rms_anterior[armonico] = rms[armonico];                   //Guardar rms actual para luego poder borrarlo
+    armonico++;
+    num_armonico = String(rms_anterior[armonico]);            //Float rms impar anterior a string
+    num_armonico.toCharArray(arm_impares, THD_VARS_SIZE);
+    TFTscreen.text(arm_impares, 112, y);                        //Escribir en negro rms anterior, es decir, borrar armonicos pares
+    num_armonico = String(rms[armonico]);                 //Float rms impar actual a string
+    num_armonico.toCharArray(arm_impares, THD_VARS_SIZE);
+    rms_anterior[armonico] = rms[armonico];               //Guardar rms actual para luego poder borrarlo
+    TFTscreen.stroke(255, 255, 255);                      //Texto color negro
+    TFTscreen.text(arm_pares, 28, y);                         //rms par en parte izquierda pantalla
+    TFTscreen.text(arm_impares, 112, y);                        //rms impar en parte derecha pantalla
+    armonico++;
   }
-}*/ 
-
+}
