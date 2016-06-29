@@ -33,7 +33,7 @@ float I_ang[HALF_FFTSIZE] = { 0};     // Ángulos I
 float IrmsFFTTHD[40] = { 0};
 float VrmsFFTTHD[40] = { 0};
 int mag_FastFFT[HALF_FFTSIZE] = { 0};     // Magnitudes
-int dc_offset = 2097;
+int dc_offset = 2048;
 int SupplyVoltage = 3300;
 int ADC_COUNTS = 4096;
 float I_RATIO;
@@ -71,7 +71,7 @@ void setup()
   TFTscreen.begin();
   TFTscreen.background(0, 0, 0);
   screenmenu(posicion, posicion_anterior);
-  ratio_setup(247.8, 25.4, 1);
+  ratio_setup(240.9, 25.65, 1);
   adc_setup ();
   Timer3.attachInterrupt(muestreo).setFrequency(6400);
   active_Boton();
@@ -210,19 +210,6 @@ void muestreo(){
     valorI[numero_muestras] = ADC->ADC_CDR[6]; //Pin A1
   }
 
-  /*
-   * Para coger muestras al paso por cero. Es necesario definir paso_cero y ponerla a cero en los mismos casos que numero_muestras. 
-   * Numero_muestras tendremos que volver a poner a cero en lugar de a menos 10.
-   * if(valorV[numero_muestras]>dc_offset+100 || valorV[numero_muestras]<dc_offset-100 && paso_cero==0){
-   * numero_muestras=0;
-   * }
-   * else
-   * {
-   * paso_cero=1;
-   * numero_muestras++;
-   * }
-   */
-
 
   numero_muestras++;
 }
@@ -298,20 +285,20 @@ void calc_FFT(int *f_r, float *magf, float *angf, float RATIO, float RATIO_ang)
 void post_FFT(float *V_mag, float *V_ang, float *I_mag, float *I_ang) {
   float sqVFFT=0, sumVFFT=0, sqIFFT=0, sumIFFT=0, instPFFT=0, sumPFFT=0, desfase = 0;
   
-  for (int i = 2; i < 81; i = i + 2) {
+  for (int i = 1; i < PRIMEROS40_ARM; i++) {
 
-    sqVFFT = V_mag[i] * V_mag[i];
-    sumVFFT += sqVFFT;
-    sqIFFT = I_mag[i] * I_mag[i];
-    sumIFFT += sqIFFT;
-    desfase = V_ang[i] - I_ang[i];
-    instPFFT = V_mag[i] * I_mag[i] * cos(desfase);
-    sumPFFT += instPFFT;
+    sqVFFT = V_mag[2*i] * V_mag[2*i];                         //Cuadrado de los múltiplos de V de la frecuencia fundamental
+    sumVFFT += sqVFFT;                                        //Sumatorio de los cuadrados de V
+    sqIFFT = I_mag[2*i] * I_mag[2*i];                         //Cuadrado de los múltiplos de I de la frecuencia fundamental
+    sumIFFT += sqIFFT;                                        //Sumatorio de los cuadrados de I
+    desfase = V_ang[2*i] - I_ang[2*i];                        //Desfase entre V e I
+    instPFFT = V_mag[2*i] * I_mag[2*i] * cos(desfase);        //Potencia instantánea
+    sumPFFT += instPFFT;                                      //Sumatorio de las potencias instantáneas
   }
 
-  VrmsFFT = sqrt((sumVFFT / 2) + (V_mag[0] * V_mag[0]));
-  IrmsFFT = sqrt((sumIFFT / 2) + (I_mag[0] * I_mag[0]));
-  realPowerFFT = sumPFFT / 2;
+  VrmsFFT = sqrt((sumVFFT / 2) + (V_mag[0] * V_mag[0]));      //El 2 es de 1/(raiz(2)*raiz(2)) del cuadrado de tensión anterior más parte continua
+  IrmsFFT = sqrt((sumIFFT / 2) + (I_mag[0] * I_mag[0]));      //El 2 es de 1/(raiz(2)*raiz(2)) del cuadrado de intensidad anterior más parte continua
+  realPowerFFT = (sumPFFT/2)+(V_mag[0]*I_mag[0]);             //El 2 es de 1/(raiz(2)*raiz(2)) de la tensión por intensidad anterior más parte continua
   apparentPowerFFT = VrmsFFT * IrmsFFT;
   reactivePowerFFT = sqrt((apparentPowerFFT * apparentPowerFFT) - (realPowerFFT * realPowerFFT));
   powerFactorFFT = realPowerFFT / apparentPowerFFT;
@@ -325,7 +312,7 @@ float THD(float *mag, float *RMS_arm) {
   int indice_armonicos=0;
   RMS_arm[0] = mag[2] / sqrt(2);
 
-  for (int i = 1; i < PRIMEROS40_ARM; i++) {                   //Poner 40 como  define
+  for (int i = 1; i < PRIMEROS40_ARM; i++) {                   
     indice_armonicos=2*i+2;                                 
     RMS_arm[i] = mag[indice_armonicos]/sqrt(2);
     cuadrado = RMS_arm[i] * RMS_arm[i];
@@ -486,7 +473,6 @@ void functionmenu (int posicion) {
               onda_sen(valorV, FFTSIZE);
               break;
             case 1:
-              prnt_out(valorI, FFTSIZE);
               onda_sen(valorI, FFTSIZE);
               break;
           }
@@ -599,8 +585,6 @@ void functionmenu (int posicion) {
           calc_offset();
           calc_FFT(Vf_r, V_mag, V_ang, V_RATIO, quantum);
           calc_FFT(If_r, I_mag, I_ang, I_RATIO, quantum);
-          //prnt_out2(V_ang, HALF_FFTSIZE);
-          //prnt_out2(I_ang, HALF_FFTSIZE);
           post_FFT(V_mag, V_ang, I_mag, I_ang);
           screen_multimeter(VrmsFFT, IrmsFFT, realPowerFFT, reactivePowerFFT, apparentPowerFFT, powerFactorFFT);
           time_calc  = micros() - time_start;
@@ -681,10 +665,7 @@ void functionmenu (int posicion) {
           switch (VorI) {
             case 0:
               calc_FFT(Vf_r, V_mag, V_ang, V_RATIO, quantum);
-              Serial.println("case V");
-              Serial.println(ok);
-              THDv=THD(V_mag, VrmsFFTTHD);     //ok pasa a 0 sin motivo cada vez que entra
-              Serial.println(ok);
+              THDv=THD(V_mag, VrmsFFTTHD);    
               screen_variables_armonicos(THDv, VrmsFFTTHD);
               break;
             case 1:
