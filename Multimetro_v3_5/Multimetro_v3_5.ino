@@ -12,11 +12,12 @@
 #define FFTSIZE 256
 #define HALF_FFTSIZE 128
 #define PRIMEROS40_ARM 40
+#define RESET_MUESTRAS -10                //Se reinicia a -10 para descartar 10 primeras muestras, ya que arduino no suele tomarlas bien
 
 TFT TFTscreen = TFT(cs, dc, rst);
 
 
-volatile    int         numero_muestras = -10;
+volatile    int         numero_muestras = RESET_MUESTRAS;
 //volatile    int         valorV[FFTSIZE] = { 0};
 volatile    int         valorV[FFTSIZE] = {2048, 2218, 2384, 2542, 2688, 2820, 2935, 3032, 3110, 3169, 3210, 3233, 3243, 3240, 3228, 3210, 3189, 3168, 3149, 3134, 3125, 3122, 3126, 3137, 3153, 3173, 3196, 3219, 3242, 3261, 3276, 3286, 3289, 3286, 3276, 3261, 3242, 3219, 3196, 3173, 3153, 3137, 3126, 3122, 3125, 3134, 3149, 3168, 3189, 3210, 3228, 3240, 3243, 3233, 3210, 3169, 3110, 3032, 2935, 2820, 2688, 2542, 2384, 2218, 2048, 1878, 1712, 1554, 1408, 1276, 1161, 1064, 986, 927, 886, 863, 853, 856, 868, 886, 907, 928, 947, 962, 971, 974, 970, 959, 943, 923, 900, 877, 854, 835, 820, 810, 807, 810, 820, 835, 854, 877, 900, 923, 943, 959, 970, 974, 971, 962, 947, 928, 907, 886, 868, 856, 853, 863, 886, 927, 986, 1064, 1161, 1276, 1408, 1554, 1712, 1878, 2048, 2218, 2384, 2542, 2688, 2820, 2935, 3032, 3110, 3169, 3210, 3233, 3243, 3240, 3228, 3210, 3189, 3168, 3149, 3134, 3125, 3122, 3126, 3137, 3153, 3173, 3196, 3219, 3242, 3261, 3276, 3286, 3289, 3286, 3276, 3261, 3242, 3219, 3196, 3173, 3153, 3137, 3126, 3122, 3125, 3134, 3149, 3168, 3189, 3210, 3228, 3240, 3243, 3233, 3210, 3169, 3110, 3032, 2935, 2820, 2688, 2542, 2384, 2218, 2048, 1878, 1712, 1554, 1408, 1276, 1161, 1064, 986, 927, 886, 863, 853, 856, 868, 886, 907, 928, 947, 962, 971, 974, 970, 959, 943, 923, 900, 877, 854, 835, 820, 810, 807, 810, 820, 835, 854, 877, 900, 923, 943, 959, 970, 974, 971, 962, 947, 928, 907, 886, 868, 856, 853, 863, 886, 927, 986, 1064, 1161, 1276, 1408, 1554, 1712, 1878};
 
@@ -32,13 +33,13 @@ float I_ang[HALF_FFTSIZE] = { 0};     // Ángulos I
 float IrmsFFTTHD[40] = { 0};
 float VrmsFFTTHD[40] = { 0};
 int mag_FastFFT[HALF_FFTSIZE] = { 0};     // Magnitudes
-int dc_offset = 2048;
+int dc_offset = 2097;
 int SupplyVoltage = 3300;
 int ADC_COUNTS = 4096;
 float I_RATIO;
 float V_RATIO;
 float FASE_RATIO_TEMP;
-float FASE_RATIO;
+float quantum;
 int lastFiltered;
 int posicion = 0;
 int posicion_anterior = 0;
@@ -54,15 +55,15 @@ char V[MULTI_VARS_SIZE], I[MULTI_VARS_SIZE], P[MULTI_VARS_SIZE], S[MULTI_VARS_SI
 #define THD_VARS_SIZE 6
 
 
-volatile bool up = 0;
-volatile bool down = 0;
-volatile bool ok = 0;
-volatile bool salir = 0;
-bool VorI = 0;
-long T0 = 0 ;
+volatile bool up = 0;                                   //Bandera up
+volatile bool down = 0;                                 //Bandera down
+volatile bool ok = 0;                                   //Bandera ok
+volatile bool salir = 0;                                //Bandera salir
+bool VorI = 0;                                          //Bandera tensión o intensidad 
+long T0 = 0 ;                                           //Tiempo espera de rebote al pulsar botones. Usar solo en las interrupciones(No es volatile)
 //Variables screen_variables_armonicos
-float rms_anterior[40] = { 0};              //rms para borrar pantalla en screen_variables_armonicos
-float THD_anterior=0;                       //THD para borrar pantalla en screen_variables_armonicos
+float rms_anterior[40] = { 0};                          //rms para borrar pantalla en screen_variables_armonicos
+float THD_anterior=0;                                   //THD para borrar pantalla en screen_variables_armonicos
 
 void setup()
 {
@@ -70,7 +71,7 @@ void setup()
   TFTscreen.begin();
   TFTscreen.background(0, 0, 0);
   screenmenu(posicion, posicion_anterior);
-  ratio_setup(248.8, 30.5, 1);
+  ratio_setup(247.8, 25.4, 1);
   adc_setup ();
   Timer3.attachInterrupt(muestreo).setFrequency(6400);
   active_Boton();
@@ -81,40 +82,40 @@ Radix4     radix;
 
 void loop()
 {
-  if (up == 1) {
-    up = 0;
-    if (posicion == 0) {
+  if (up == 1){                                 //Modifica posición al pulsar up
+    up = 0;                                     //Reset bandera up
+    if (posicion == 0) {                        //Está arriba del todo pasar a última
       posicion = 5;
     } else {
-      posicion--;
+      posicion--;                               //Subir uno
     }
-    posicion_anterior = 1;
+    posicion_anterior = 1;                      //Bandera para saber si has pulsado up(1) or down(0)
     screenmenu(posicion, posicion_anterior);
-  } else if (down == 1) {
-    down = 0;
-    if (posicion == 5) {
+  } else if (down == 1){                        //Modifica posición al pulsar down                     
+    down = 0;                                   //Reset bandera down
+    if (posicion == 5) {                        //Está abajo del todo pasar a primera
       posicion = 0;
-    } else {
+    } else {                                    //Bajar uno
       posicion++;
     }
-    posicion_anterior = 0;
+    posicion_anterior = 0;                      //Bandera para saber si has pulsado up(1) or down(0)
     screenmenu(posicion, posicion_anterior);
-  } else if (ok == 1) {
-    ok = 0;
+  } else if (ok == 1) {                         //Ok pulsado
+    ok = 0;                                     //Reset bandera ok
     functionmenu(posicion);
   }
 
 }
 
 
-void calcVI()
+void calcVI(int *Vinst, int *Iinst, float desfaseratio)
 {
   //Reset accumulators
   float sqV=0, sumV=0, sqI=0, sumI=0, instP=0, sumP=0, phaseShiftedV=0;
 
 
   //-------------------------------------------------------------------------------------------------------------------------
-  // 1) Lazo de medida
+  // 1) Lazo de cálculo
   //-------------------------------------------------------------------------------------------------------------------------
 
 
@@ -125,43 +126,37 @@ void calcVI()
     //-----------------------------------------------------------------------------
     // A) Cuadrado de la tensión
     //-----------------------------------------------------------------------------
-    sqV = Vf_r[i] * Vf_r[i];                //1) square voltage values
-    sumV += sqV;                            //2) sum
+    sqV = Vinst[i] * Vinst[i];                
+    sumV += sqV;                            
 
 
     //-----------------------------------------------------------------------------
     // B) Cuadrado de la intensidad
     //-----------------------------------------------------------------------------
-    sqI = If_r[i] * If_r[i];                //1) square current values
-    sumI += sqI;                            //2) sum
+    sqI = Iinst[i] * Iinst[i];                
+    sumI += sqI;                            
 
     //-----------------------------------------------------------------------------
     // C) Se calibra la tensión para compensar el retraso de tiempo entre la muestra I y la muestra V.
-    //    -Si 20ms sonn 360º ver tiempo entre una muestra y la siguiente y calcular Fase_Cal
+    //    -Si 20ms sonn 360º ver tiempo entre una muestra y la siguiente y calcular desfaseratio
     //-----------------------------------------------------------------------------
-    phaseShiftedV = lastFiltered + FASE_RATIO_TEMP * (Vf_r[i] - lastFiltered);
-    lastFiltered = Vf_r[i];
+    phaseShiftedV = lastFiltered + desfaseratio * (Vinst[i] - lastFiltered);
+    lastFiltered = Vinst[i];                                         //Guardo en variable global para luego usar
 
     //-----------------------------------------------------------------------------
-    // D) Instantaneous power calc
+    // D) Potencia instantánea
     //-----------------------------------------------------------------------------
-    instP = phaseShiftedV * If_r[i];          //Instantaneous Power
-    sumP += instP;                              //Sum
+    instP = phaseShiftedV * Iinst[i];          
+    sumP += instP;                   
 
 
   }
 
-  //-------------------------------------------------------------------------------------------------------------------------
-  // 2) Post loop calculations.
-  //-------------------------------------------------------------------------------------------------------------------------
-  //Calculation of the root of the mean of the voltage and current squared (rms)
-  //Calibration coefficients applied.
 
   Vrms = V_RATIO * sqrt(sumV / FFTSIZE);                      //Aproximación para entornos de programación
   Irms = I_RATIO * sqrt(sumI / FFTSIZE);
 
 
-  //Calculation power values
   realPower = V_RATIO * I_RATIO * sumP / FFTSIZE;
   apparentPower = Vrms * Irms;
   powerFactor = realPower / apparentPower;
@@ -208,11 +203,11 @@ void adc_setup ()
 }
 
 void muestreo(){
-  ADC->ADC_CR |= 0x02;                       //start ADC
-  while ((ADC->ADC_ISR & 0xC0) == 0x00);
+  ADC->ADC_CR |= 0x02;                        //start ADC
+  while ((ADC->ADC_ISR & 0xC0) == 0x00);      //Esperar que termine conversión
   if (numero_muestras >= 0 && numero_muestras < FFTSIZE) {
-    //valorV[numero_muestras] = ADC->ADC_CDR[7]; //Cuidado, corresponde con el pin A0??
-    //valorI[numero_muestras] = ADC->ADC_CDR[6]; //Pin A1*/
+    valorV[numero_muestras] = ADC->ADC_CDR[7]; //Cuidado, corresponde con el pin A0
+    valorI[numero_muestras] = ADC->ADC_CDR[6]; //Pin A1
   }
 
   /*
@@ -270,9 +265,9 @@ void BotonExit()
 
 void ratio_setup(float VCAL, float ICAL, float Fase_Cal)
 {
-  FASE_RATIO = ((SupplyVoltage / 1000.0) / (ADC_COUNTS));
-  I_RATIO = ICAL * FASE_RATIO;
-  V_RATIO = VCAL * FASE_RATIO;     // VCAL*3,3/ADC_COUNTS
+  quantum = ((SupplyVoltage / 1000.0) / (ADC_COUNTS));
+  I_RATIO = ICAL * quantum;
+  V_RATIO = VCAL * quantum;     // VCAL*3,3/ADC_COUNTS
   FASE_RATIO_TEMP = Fase_Cal;
 }
 
@@ -459,8 +454,8 @@ void functionmenu (int posicion) {
         if (up || down) {
           VorI = !VorI;
           VorI_menu(VorI);
-          up = 0;
-          down = 0;
+          up = 0;                                   //Reset bandera up
+          down = 0;                                   //Reset bandera down
         }
       }
       if (salir) {
@@ -485,19 +480,20 @@ void functionmenu (int posicion) {
           Timer3.stop();
           active_Boton();
           time_start = micros();
-          numero_muestras = -10;
+          numero_muestras = RESET_MUESTRAS;
           switch (VorI) {
             case 0:
               onda_sen(valorV, FFTSIZE);
               break;
             case 1:
+              prnt_out(valorI, FFTSIZE);
               onda_sen(valorI, FFTSIZE);
               break;
           }
           time_calc = micros() - time_start;
-          /*while(time_calc<=200000){                      //Esperar a paso por cero de la onda. Poner en caso de no verse bien la onda
+          while(time_calc<=200000){                      //Esperar a paso por cero de la onda. Poner en caso de no verse bien la onda
             time_calc  = micros() - time_start;
-            }*/
+            }
           if (!salir) {
             desactive_Boton();
             Timer3.start();
@@ -516,8 +512,8 @@ void functionmenu (int posicion) {
         if (up || down) {
           VorI = !VorI;
           VorI_menu(VorI);
-          up = 0;
-          down = 0;
+          up = 0;                                   //Reset bandera up
+          down = 0;                                   //Reset bandera down
         }
       }
       if (salir) {
@@ -542,7 +538,7 @@ void functionmenu (int posicion) {
           Timer3.stop();
           active_Boton();
           time_start = micros();
-          numero_muestras = -10;
+          numero_muestras = RESET_MUESTRAS;
           calc_offset();
           switch (VorI) {
             case 0:
@@ -574,9 +570,9 @@ void functionmenu (int posicion) {
           Timer3.stop();
           active_Boton();
           time_start = micros();
-          numero_muestras = -10;
+          numero_muestras = RESET_MUESTRAS;
           calc_offset();
-          calcVI();
+          calcVI(Vf_r, If_r, FASE_RATIO_TEMP);
           screen_multimeter(Vrms, Irms, realPower, reactivePower, apparentPower, powerFactor);
           time_calc  = micros() - time_start;
           if (!salir) {
@@ -599,10 +595,10 @@ void functionmenu (int posicion) {
           Timer3.stop();
           active_Boton();
           time_start = micros();
-          numero_muestras = -10;
+          numero_muestras = RESET_MUESTRAS;
           calc_offset();
-          calc_FFT(Vf_r, V_mag, V_ang, V_RATIO, FASE_RATIO);
-          calc_FFT(If_r, I_mag, I_ang, I_RATIO, FASE_RATIO);
+          calc_FFT(Vf_r, V_mag, V_ang, V_RATIO, quantum);
+          calc_FFT(If_r, I_mag, I_ang, I_RATIO, quantum);
           //prnt_out2(V_ang, HALF_FFTSIZE);
           //prnt_out2(I_ang, HALF_FFTSIZE);
           post_FFT(V_mag, V_ang, I_mag, I_ang);
@@ -627,13 +623,13 @@ void functionmenu (int posicion) {
           Timer3.stop();
           active_Boton();
           time_start = micros();
-          numero_muestras = -10;
+          numero_muestras = RESET_MUESTRAS;
           calc_offset();
-          calc_FFT(Vf_r, V_mag, V_ang, V_RATIO, FASE_RATIO);
-          calc_FFT(If_r, I_mag, I_ang, I_RATIO, FASE_RATIO);
+          calc_FFT(Vf_r, V_mag, V_ang, V_RATIO, quantum);
+          calc_FFT(If_r, I_mag, I_ang, I_RATIO, quantum);
           post_FFT(V_mag, V_ang, I_mag, I_ang);
           calc_offset();
-          calcVI();
+          calcVI(Vf_r, If_r, FASE_RATIO_TEMP);
           screen_variables_temp_vs_FFT();
           time_calc  = micros() - time_start;
           if (!salir) {
@@ -654,8 +650,8 @@ void functionmenu (int posicion) {
         if (up || down) {
           VorI = !VorI;
           VorI_menu(VorI);
-          up = 0;
-          down = 0;
+          up = 0;                                   //Reset bandera up
+          down = 0;                                   //Reset bandera down
         }
       }
       if (salir) {
@@ -680,11 +676,11 @@ void functionmenu (int posicion) {
           Timer3.stop();
           active_Boton();
           time_start = micros();
-          numero_muestras = -10;
+          numero_muestras = RESET_MUESTRAS;
           calc_offset(); 
           switch (VorI) {
             case 0:
-              calc_FFT(Vf_r, V_mag, V_ang, V_RATIO, FASE_RATIO);
+              calc_FFT(Vf_r, V_mag, V_ang, V_RATIO, quantum);
               Serial.println("case V");
               Serial.println(ok);
               THDv=THD(V_mag, VrmsFFTTHD);     //ok pasa a 0 sin motivo cada vez que entra
@@ -693,7 +689,7 @@ void functionmenu (int posicion) {
               break;
             case 1:
 
-              calc_FFT(If_r, I_mag, I_ang, I_RATIO, FASE_RATIO);
+              calc_FFT(If_r, I_mag, I_ang, I_RATIO, quantum);
               THDi=THD(I_mag, IrmsFFTTHD);
               screen_variables_armonicos(THDi, IrmsFFTTHD);
               break;
@@ -714,13 +710,13 @@ void functionmenu (int posicion) {
   Timer3.stop();
   active_Boton();
 
-  numero_muestras = -10;
+  numero_muestras = RESET_MUESTRAS;
   salir = 0;
-  up = 0;
-  down = 0;
+  up = 0;                                   //Reset bandera up
+  down = 0;                                   //Reset bandera down
   if (posicion == 2 || posicion == 3 || posicion == 4 || salir2) {
     screenmenu(posicion, posicion_anterior);
-    ok = 0;
+    ok = 0;                                     //Reset bandera ok
   }
 
 }
@@ -752,9 +748,9 @@ void calc_offset() {
 void onda_sen(volatile int *onda, int longitud) {
 
 
-  int xPos = 34;
+  int xPos = 32;
   int muestra;
-  int muestra_anterior = 59;
+  int muestra_anterior = map(dc_offset, 0, 4096, 0, (TFTscreen.height() - 10));
 
 
   for (int i = 0; i < longitud; i = i + 2) {
@@ -764,16 +760,16 @@ void onda_sen(volatile int *onda, int longitud) {
     muestra = map(sensor, 0, 4096, 0, (TFTscreen.height() - 10));
 
     TFTscreen.stroke(0, 0, 0);                            //Color negro
-    TFTscreen.line(xPos, 0, xPos, 118);                   //borrar posicion que vamos a pintar
+    //TFTscreen.line(xPos, 0, xPos, 118);                   //borrar posicion que vamos a pintar
     TFTscreen.line(xPos + 1, 0, xPos + 1, 118);               //borrar posicion que vamos a pintar
-    TFTscreen.line(xPos + 2, 0, xPos + 2, 118);
+    //TFTscreen.line(xPos + 2, 0, xPos + 2, 118);
     TFTscreen.stroke(255, 255, 255);                      //Blanco *
 
 
-    TFTscreen.line(xPos - 2, muestra_anterior, xPos, muestra); //Representar linea desde posición anterior hasta posicion actual
+    TFTscreen.line(xPos, muestra_anterior, xPos+1, muestra); //Representar linea desde posición anterior hasta posicion actual
     muestra_anterior = muestra;
 
-    xPos = xPos + 2;
+    xPos++;
 
   }
 
