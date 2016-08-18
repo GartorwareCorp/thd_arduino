@@ -13,6 +13,10 @@
 #define HALF_FFTSIZE 128
 #define PRIMEROS40_ARM 40
 #define RESET_MUESTRAS -10                //Se reinicia a -10 para descartar 10 primeras muestras, ya que arduino no suele tomarlas bien
+#define MULTI_VARS_SIZE 8
+#define THD_VARS_SIZE 6
+#define POS_EJE_X 113
+#define POS_EJE_Y 32
 
 TFT TFTscreen = TFT(cs, dc, rst);
 
@@ -50,9 +54,8 @@ float realPower, reactivePower, apparentPower, powerFactor, Vrms, Irms;
 float realPowerFFT, reactivePowerFFT, apparentPowerFFT, powerFactorFFT, VrmsFFT, IrmsFFT; 
 float THDv=0, THDi=0;
 
-#define MULTI_VARS_SIZE 8
+int div_x, div_y, inicio_escala_x, incr_escala_x, inicio_escala_y, incr_escala_y;
 char V[MULTI_VARS_SIZE], I[MULTI_VARS_SIZE], P[MULTI_VARS_SIZE], S[MULTI_VARS_SIZE], Q[MULTI_VARS_SIZE], FP[MULTI_VARS_SIZE], V_FFT[MULTI_VARS_SIZE], I_FFT[MULTI_VARS_SIZE], P_FFT[MULTI_VARS_SIZE], S_FFT[MULTI_VARS_SIZE], Q_FFT[MULTI_VARS_SIZE], FP_FFT[MULTI_VARS_SIZE];
-#define THD_VARS_SIZE 6
 
 
 volatile bool up = 0;                                   //Bandera up
@@ -71,7 +74,7 @@ void setup()
   TFTscreen.begin();
   TFTscreen.background(0, 0, 0);
   screenmenu(posicion, posicion_anterior);
-  ratio_setup(240.9, 25.65, 1);
+  ratio_setup(244, 21, 1);                            //No cambiar VCAL=244, ICAL=21 (Pinza barata) calibrado con fuente programable
   adc_setup ();
   Timer3.attachInterrupt(muestreo).setFrequency(6400);
   active_Boton();
@@ -206,8 +209,8 @@ void muestreo(){
   ADC->ADC_CR |= 0x02;                        //start ADC
   while ((ADC->ADC_ISR & 0xC0) == 0x00);      //Esperar que termine conversión
   if (numero_muestras >= 0 && numero_muestras < FFTSIZE) {
-    valorV[numero_muestras] = ADC->ADC_CDR[7]; //Cuidado, corresponde con el pin A0
-    valorI[numero_muestras] = ADC->ADC_CDR[6]; //Pin A1
+    //valorV[numero_muestras] = ADC->ADC_CDR[7]; //Cuidado, corresponde con el pin A0
+    //valorI[numero_muestras] = ADC->ADC_CDR[6]; //Pin A1
   }
 
 
@@ -452,10 +455,22 @@ void functionmenu (int posicion) {
         TFTscreen.setTextSize(1);
         switch (VorI) {
           case 0:
-            ejes("t", "V", 8, 10);
+            div_x=16; 
+            div_y=8;
+            inicio_escala_x=5; 
+            incr_escala_x=5;
+            inicio_escala_y=-360; 
+            incr_escala_y=60;
+            ejes("t(ms)", "V(V)", div_x, div_y, inicio_escala_x, incr_escala_x, inicio_escala_y, incr_escala_y);
             break;
           case 1:
-            ejes("t", "I", 8, 10);
+            div_x=16; 
+            div_y=8;
+            inicio_escala_x=5; 
+            incr_escala_x=5;
+            inicio_escala_y=-12; 
+            incr_escala_y=2;
+            ejes("t(ms)", "I(A)", div_x, div_y, inicio_escala_x, incr_escala_x, inicio_escala_y, incr_escala_y);
             break;
         }
         desactive_Boton();
@@ -509,10 +524,22 @@ void functionmenu (int posicion) {
         TFTscreen.setTextSize(1);
         switch (VorI) {
           case 0:
-            ejes("f", "V", 3, 10);
+            div_x=15; 
+            div_y=10;
+            inicio_escala_x=5; 
+            incr_escala_x=5;
+            inicio_escala_y=10; 
+            incr_escala_y=10;
+            ejes("N arm", "V(%)", div_x, div_y, inicio_escala_x, incr_escala_x, inicio_escala_y, incr_escala_y);
             break;
           case 1:
-            ejes("f", "I", 3, 10);
+            div_x=15; 
+            div_y=10;
+            inicio_escala_x=5; 
+            incr_escala_x=5;
+            inicio_escala_y=10; 
+            incr_escala_y=10;
+            ejes("N arm", "I(%)", div_x, div_y, inicio_escala_x, incr_escala_x, inicio_escala_y, incr_escala_y);
             break;
         }
         desactive_Boton();
@@ -729,63 +756,90 @@ void calc_offset() {
 void onda_sen(volatile int *onda, int longitud) {
 
 
-  int xPos = 32;
+  int xPos = POS_EJE_Y;
   int muestra;
-  int muestra_anterior = map(dc_offset, 0, 4096, 0, (TFTscreen.height() - 10));
+  int muestra_anterior = map(dc_offset, 0, 4095, (TFTscreen.height() - 10), 0);
+
+  // Desde POS_EJE_X-yDiv hasta POS_EJE_X - (yDiv*num divisiones) y desde (inicio_escala_y/RATIO)+dc_offset hasta (inicio_escala_y*num divisiones/RATIO)+dc_offset
 
 
   for (int i = 0; i < longitud; i = i + 2) {
 
     int sensor = onda[i];
 
-    muestra = map(sensor, 0, 4096, 0, (TFTscreen.height() - 10));
+    muestra = map(sensor, 0, 4095,(TFTscreen.height() - 10), 0);
 
     TFTscreen.stroke(0, 0, 0);                            //Color negro
     //TFTscreen.line(xPos, 0, xPos, 118);                   //borrar posicion que vamos a pintar
-    TFTscreen.line(xPos + 1, 0, xPos + 1, 118);               //borrar posicion que vamos a pintar
+    TFTscreen.line(xPos + 1, 9, xPos + 1, POS_EJE_X);               //borrar posicion que vamos a pintar
     //TFTscreen.line(xPos + 2, 0, xPos + 2, 118);
     TFTscreen.stroke(255, 255, 255);                      //Blanco *
 
-
     TFTscreen.line(xPos, muestra_anterior, xPos+1, muestra); //Representar linea desde posición anterior hasta posicion actual
     muestra_anterior = muestra;
-
+     if(xPos==96){
+      TFTscreen.line(xPos, 0, xPos, POS_EJE_X);
+     }
     xPos++;
 
   }
 
 }
 
-void espectro_frec(int *frec, int longitud) {
+void espectro_frec40(int *frec) {
 
 
-  int xPos = 33;
+  int xPos = 34;
   int muestra;
+  int amplitud_fundamental = frec[2];
 
-  for (int i = 0; i < longitud; i++) {
+  for (int i = 0; i < PRIMEROS40_ARM; i++) {                                  
 
-    int amplitud = frec[i];
+    int amplitud = frec[2*i+2];
 
-    muestra = map(amplitud, 0, 1500, 0, (TFTscreen.height() - 10));
+    muestra = map(amplitud, 0, amplitud_fundamental, POS_EJE_X, POS_EJE_X-100);     //Cambiar segun circuito acondicionamiento
+
+    TFTscreen.stroke(0, 0, 0);                            //Color negro
+    TFTscreen.line(xPos, 9, xPos, POS_EJE_X);                   //borrar posicion que vamos a pintar
+    TFTscreen.line(xPos + 1, 9, xPos + 1, POS_EJE_X);               //borrar posicion que vamos a pintar
+    TFTscreen.stroke(255, 255, 255);                      //Blanco */
+
+    TFTscreen.line(xPos, POS_EJE_X, xPos, muestra);           //Representar amplitud de la frec
+    TFTscreen.line(xPos + 1, POS_EJE_X, xPos + 1, muestra);       //Representar amplitud de la frec
+
+    xPos = xPos + 3;
 
 
-    TFTscreen.line(xPos, 118, xPos, 118 - muestra);           //Representar amplitud de la frec
-
-    // if the graph has reached the screen edge
-    // erase the screen and start again
-    if (xPos == 160) {
-      xPos = 33;                                          //Hemos representado 128 muestras, pasamos a inicio de la pantalla
-      TFTscreen.noStroke();
-      TFTscreen.fill(0, 0, 0);                          //Color negro
-      TFTscreen.rect(xPos - 1, 0, 160, 118);                //Borrar pantalla completa. (Ver si tomando muestras reales es mejor borrar posicion que vamos a pintar, al igual que hacíamos en v1)
-      TFTscreen.stroke(255, 255, 255);                      //Blanco
-    } else {
-      // increment the horizontal position:
-      xPos++;
-    }
   }
 
 }
+
+
+void ejes(char *abscisas, char *ordenadas, int xDiv, int yDiv, int escala_x, int incr_escala_x, int escala_y, int incr_escala_y) {
+  char escala_eje[8];
+  TFTscreen.text(ordenadas, 34, 0);
+  TFTscreen.text(abscisas, 0, 120);
+  TFTscreen.line(POS_EJE_Y, 0, POS_EJE_Y, 128);
+  TFTscreen.line(0, POS_EJE_X, 160, POS_EJE_X);
+
+  for (int x = POS_EJE_Y + xDiv; x < 160; x = x + xDiv) {
+    TFTscreen.line(x, POS_EJE_X, x, 118);
+    String escala = String(escala_x);
+    escala.toCharArray(escala_eje, 8);
+    TFTscreen.text(escala_eje,x-3, 120);
+    escala_x += incr_escala_x;
+  }
+
+  for (int y = POS_EJE_X - yDiv; y > POS_EJE_X-105; y = y - yDiv) {
+    TFTscreen.line(26, y, POS_EJE_Y, y);
+    String escala = String(escala_y);
+    escala.toCharArray(escala_eje, 8);
+    TFTscreen.text(escala_eje,0, y-3);
+    escala_y += incr_escala_y;
+  }
+
+}
+
 
 void screen_multimeter (float V_cal, float I_cal, float P_cal, float Q_cal, float S_cal, float FP_cal) {
 
@@ -956,49 +1010,6 @@ void screen_variables_temp_vs_FFT() {
 
 }
 
-void espectro_frec40(int *frec) {                   //REVISARRRRRRRRRRR
-
-
-  int xPos = 34;
-  int muestra;
-
-  for (int i = 2; i < 81; i = i + 2) {                                  //ver si se puede cambiar el 81 por 40
-
-    int amplitud = frec[i];
-
-    muestra = map(amplitud, 0, 2048, 0, (TFTscreen.height() - 10));     //Cambiar segun circuito acondicionamiento
-
-    TFTscreen.stroke(0, 0, 0);                            //Color negro
-    TFTscreen.line(xPos, 0, xPos, 118);                   //borrar posicion que vamos a pintar
-    TFTscreen.line(xPos + 1, 0, xPos + 1, 118);               //borrar posicion que vamos a pintar
-    TFTscreen.stroke(255, 255, 255);                      //Blanco */
-
-    TFTscreen.line(xPos, 118, xPos, (118 - muestra));           //Representar amplitud de la frec
-    TFTscreen.line(xPos + 1, 118, xPos + 1, (118 - muestra));       //Representar amplitud de la frec
-
-    xPos = xPos + 3;
-
-
-  }
-
-}
-
-
-void ejes(char *abscisas, char *ordenadas, int xDiv, int yDiv) {
-  TFTscreen.text(ordenadas, 0, 0);
-  TFTscreen.text(abscisas, 155, 120);
-  TFTscreen.line(32, 0, 32, 128);
-  TFTscreen.line(0, 118, 160, 118);
-
-  for (int x = 32; x < 160; x = x + xDiv) {
-    TFTscreen.line(x, 118, x, 122);
-  }
-
-  for (int y = 118; y > 0; y = y - yDiv) {
-    TFTscreen.line(28, y, 32, y);
-  }
-
-}
 
 void screen_armonicos (char *titulo, char *variable) {
   String num_armonico;
