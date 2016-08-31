@@ -55,6 +55,8 @@ float realPowerFFT, reactivePowerFFT, apparentPowerFFT, powerFactorFFT, VrmsFFT,
 float THDv=0, THDi=0;
 
 int div_x, div_y, inicio_escala_x, incr_escala_x, inicio_escala_y, incr_escala_y;
+int min_pixel_y, max_pixel_y, min_muestra_y, max_muestra_y, num_div_y;
+
 char V[MULTI_VARS_SIZE], I[MULTI_VARS_SIZE], P[MULTI_VARS_SIZE], S[MULTI_VARS_SIZE], Q[MULTI_VARS_SIZE], FP[MULTI_VARS_SIZE], V_FFT[MULTI_VARS_SIZE], I_FFT[MULTI_VARS_SIZE], P_FFT[MULTI_VARS_SIZE], S_FFT[MULTI_VARS_SIZE], Q_FFT[MULTI_VARS_SIZE], FP_FFT[MULTI_VARS_SIZE];
 
 
@@ -462,6 +464,12 @@ void functionmenu (int posicion) {
             inicio_escala_y=-360; 
             incr_escala_y=60;
             ejes("t(ms)", "V(V)", div_x, div_y, inicio_escala_x, incr_escala_x, inicio_escala_y, incr_escala_y);
+            // Desde POS_EJE_X-yDiv hasta POS_EJE_X - (yDiv*num divisiones) y desde (inicio_escala_y/RATIO)+dc_offset hasta ((inicio_escala_y+(incr_escala_y*num divisiones))/RATIO)+dc_offset
+            //Calculamos parámetros para escalar la onda en la pantalla
+            min_pixel_y=POS_EJE_X-div_y;
+            max_pixel_y=POS_EJE_X-(div_y*num_div_y);
+            min_muestra_y=(inicio_escala_y/V_RATIO)+dc_offset;
+            max_muestra_y=((inicio_escala_y+(incr_escala_y*(num_div_y-1)))/V_RATIO)+dc_offset;
             break;
           case 1:
             div_x=16; 
@@ -471,6 +479,11 @@ void functionmenu (int posicion) {
             inicio_escala_y=-12; 
             incr_escala_y=2;
             ejes("t(ms)", "I(A)", div_x, div_y, inicio_escala_x, incr_escala_x, inicio_escala_y, incr_escala_y);
+            //Calculamos parámetros para escalar la onda en la pantalla
+            min_pixel_y=POS_EJE_X-div_y;
+            max_pixel_y=POS_EJE_X-(div_y*num_div_y);
+            min_muestra_y=(inicio_escala_y/I_RATIO)+dc_offset;
+            max_muestra_y=((inicio_escala_y+(incr_escala_y*(num_div_y-1)))/I_RATIO)+dc_offset;
             break;
         }
         desactive_Boton();
@@ -485,10 +498,10 @@ void functionmenu (int posicion) {
           numero_muestras = RESET_MUESTRAS;
           switch (VorI) {
             case 0:
-              onda_sen(valorV, FFTSIZE);
+              onda_sen(valorV, FFTSIZE, min_pixel_y, max_pixel_y, min_muestra_y, max_muestra_y);
               break;
             case 1:
-              onda_sen(valorI, FFTSIZE);
+              onda_sen(valorI, FFTSIZE, min_pixel_y, max_pixel_y, min_muestra_y, max_muestra_y);
               break;
           }
           time_calc = micros() - time_start;
@@ -753,21 +766,19 @@ void calc_offset() {
 
 }
 
-void onda_sen(volatile int *onda, int longitud) {
+void onda_sen(volatile int *onda, int longitud, int min_pixel, int max_pixel, int min_muestra, int max_muestra) {
 
 
   int xPos = POS_EJE_Y;
   int muestra;
-  int muestra_anterior = map(dc_offset, 0, 4095, (TFTscreen.height() - 10), 0);
-
-  // Desde POS_EJE_X-yDiv hasta POS_EJE_X - (yDiv*num divisiones) y desde (inicio_escala_y/RATIO)+dc_offset hasta (inicio_escala_y*num divisiones/RATIO)+dc_offset
+  int muestra_anterior = map(dc_offset, min_muestra, max_muestra, min_pixel, max_pixel);
 
 
   for (int i = 0; i < longitud; i = i + 2) {
 
     int sensor = onda[i];
 
-    muestra = map(sensor, 0, 4095,(TFTscreen.height() - 10), 0);
+    muestra = map(sensor, min_muestra, max_muestra, min_pixel, max_pixel);
 
     TFTscreen.stroke(0, 0, 0);                            //Color negro
     //TFTscreen.line(xPos, 0, xPos, 118);                   //borrar posicion que vamos a pintar
@@ -777,9 +788,7 @@ void onda_sen(volatile int *onda, int longitud) {
 
     TFTscreen.line(xPos, muestra_anterior, xPos+1, muestra); //Representar linea desde posición anterior hasta posicion actual
     muestra_anterior = muestra;
-     if(xPos==96){
-      TFTscreen.line(xPos, 0, xPos, POS_EJE_X);
-     }
+
     xPos++;
 
   }
@@ -816,6 +825,7 @@ void espectro_frec40(int *frec) {
 
 
 void ejes(char *abscisas, char *ordenadas, int xDiv, int yDiv, int escala_x, int incr_escala_x, int escala_y, int incr_escala_y) {
+  num_div_y=0;
   char escala_eje[8];
   TFTscreen.text(ordenadas, 34, 0);
   TFTscreen.text(abscisas, 0, 120);
@@ -836,8 +846,11 @@ void ejes(char *abscisas, char *ordenadas, int xDiv, int yDiv, int escala_x, int
     escala.toCharArray(escala_eje, 8);
     TFTscreen.text(escala_eje,0, y-3);
     escala_y += incr_escala_y;
+    num_div_y++;
   }
-
+  
+  //Desde POS_EJE_X-yDiv hasta POS_EJE_X - (yDiv*num divisiones) y desde (inicio_escala_y/RATIO)+dc_offset hasta ((inicio_escala_y+(incr_escala_y*num divisiones))/RATIO)+dc_offset
+  
 }
 
 
