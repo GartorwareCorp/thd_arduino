@@ -75,11 +75,12 @@ void setup()
   Serial.begin (115200);
   TFTscreen.begin();
   TFTscreen.background(0, 0, 0);
+  active_Boton();
+  select_pinza ();
   screenmenu(posicion, posicion_anterior);
-  ratio_setup(244, 21, 1);                            //No cambiar VCAL=244, ICAL=21 (Pinza barata) calibrado con fuente programable
   adc_setup ();
   Timer3.attachInterrupt(muestreo).setFrequency(6400);
-  active_Boton();
+
 }
 
 Radix4     radix;
@@ -108,6 +109,12 @@ void loop()
   } else if (ok == 1) {                         //Ok pulsado
     ok = 0;                                     //Reset bandera ok
     functionmenu(posicion);
+  } else if (salir == 1) {
+    select_pinza ();
+    posicion=0;
+    posicion_anterior=0;
+    salir = 0;
+    screenmenu(posicion, posicion_anterior);
   }
 
 }
@@ -252,6 +259,82 @@ void BotonExit()
   { 
     salir = 1;
     T0 = millis();
+  }
+}
+
+void select_pinza (){
+  int indicador=0;
+  int ind_anterior=0;
+  TFTscreen.background(0, 0, 0);
+  screenpinza(indicador, ind_anterior); 
+  while(!ok){
+    if (up == 1){                                 //Modifica posición al pulsar up
+      up = 0;                                     //Reset bandera up
+      if (indicador == 0) {                        //Está arriba del todo pasar a última
+        indicador = 2;
+      } else {
+        indicador--;                               //Subir uno
+      }
+      ind_anterior = 1;                      //Bandera para saber si has pulsado up(1) or down(0)
+      screenpinza(indicador, ind_anterior);
+    } else if (down == 1){                        //Modifica posición al pulsar down                     
+      down = 0;                                   //Reset bandera down
+      if (indicador == 2) {                        //Está abajo del todo pasar a primera
+        indicador = 0;
+      } else {                                    //Bajar uno
+        indicador++;
+      }
+      ind_anterior = 0;                      //Bandera para saber si has pulsado up(1) or down(0)
+      screenpinza(indicador, ind_anterior);
+    }
+  }
+  switch(indicador){
+    case 0:
+    ratio_setup(244,21,1);        //Pinza SCT 013 030. Calibrada ya con fuente programable.
+    break;
+    case 1:
+    ratio_setup(244,10,1);         //Pinza SCT 013 100. Falta calibrar
+    break;
+    case 2:
+    ratio_setup(244,1,1);         //Pinza Chaubin E3N
+    break;
+  }
+  TFTscreen.background(0, 0, 0);
+  ok=0;
+}
+
+void screenpinza (int indicador, int arriba) {
+  TFTscreen.stroke(0, 0, 0);
+  TFTscreen.setTextSize(2);
+
+  switch (indicador) {
+    case 0:
+      if (arriba == 1) {
+        TFTscreen.text("\n\nSCT 013 030\n\n>SCT 013 100\n", 0, 0);
+      } else {
+        TFTscreen.text("\n\nSCT 013 030\n\n\n\n>Chaubin E3N\n", 0, 0);
+      }
+      TFTscreen.stroke(255, 255, 255);
+      TFTscreen.text("MENU PINZAS\n\n>SCT 013 030\n\nSCT 013 100\n\nChaubin E3N\n", 0, 0);
+      break;
+    case 1:
+      if (arriba == 1) {
+        TFTscreen.text("\n\n\n\nSCT 013 100\n\n>Chaubin E3N\n", 0, 0);
+      } else {
+        TFTscreen.text("\n\n>SCT 013 030\n\nSCT 013 100\n\n\n", 0, 0);
+      }
+      TFTscreen.stroke(255, 255, 255);
+      TFTscreen.text("MENU PINZAS\n\nSCT 013 030\n\n>SCT 013 100\n\nChaubin E3N\n", 0, 0);
+      break;
+    case 2:
+      if (arriba == 1) {
+        TFTscreen.text("\n\n>SCT 013 030\n\n\n\nChaubin E3N\n", 0, 0);
+      } else {
+        TFTscreen.text("\n\n\n\n>SCT 013 100\n\nChaubin E3N\n", 0, 0);
+      }
+      TFTscreen.stroke(255, 255, 255);
+      TFTscreen.text("MENU PINZAS\n\nSCT 013 030\n\nSCT 013 100\n\n>Chaubin E3N\n", 0, 0);
+      break;
   }
 }
 
