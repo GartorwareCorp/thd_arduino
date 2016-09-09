@@ -27,11 +27,11 @@ TFT TFTscreen = TFT(cs, dc, rst);
 
 
 volatile    int         numero_muestras = RESET_MUESTRAS;
-volatile    int         valorV[FFTSIZE] = { 0};
-//volatile    int         valorV[FFTSIZE] = {2048, 2218, 2384, 2542, 2688, 2820, 2935, 3032, 3110, 3169, 3210, 3233, 3243, 3240, 3228, 3210, 3189, 3168, 3149, 3134, 3125, 3122, 3126, 3137, 3153, 3173, 3196, 3219, 3242, 3261, 3276, 3286, 3289, 3286, 3276, 3261, 3242, 3219, 3196, 3173, 3153, 3137, 3126, 3122, 3125, 3134, 3149, 3168, 3189, 3210, 3228, 3240, 3243, 3233, 3210, 3169, 3110, 3032, 2935, 2820, 2688, 2542, 2384, 2218, 2048, 1878, 1712, 1554, 1408, 1276, 1161, 1064, 986, 927, 886, 863, 853, 856, 868, 886, 907, 928, 947, 962, 971, 974, 970, 959, 943, 923, 900, 877, 854, 835, 820, 810, 807, 810, 820, 835, 854, 877, 900, 923, 943, 959, 970, 974, 971, 962, 947, 928, 907, 886, 868, 856, 853, 863, 886, 927, 986, 1064, 1161, 1276, 1408, 1554, 1712, 1878, 2048, 2218, 2384, 2542, 2688, 2820, 2935, 3032, 3110, 3169, 3210, 3233, 3243, 3240, 3228, 3210, 3189, 3168, 3149, 3134, 3125, 3122, 3126, 3137, 3153, 3173, 3196, 3219, 3242, 3261, 3276, 3286, 3289, 3286, 3276, 3261, 3242, 3219, 3196, 3173, 3153, 3137, 3126, 3122, 3125, 3134, 3149, 3168, 3189, 3210, 3228, 3240, 3243, 3233, 3210, 3169, 3110, 3032, 2935, 2820, 2688, 2542, 2384, 2218, 2048, 1878, 1712, 1554, 1408, 1276, 1161, 1064, 986, 927, 886, 863, 853, 856, 868, 886, 907, 928, 947, 962, 971, 974, 970, 959, 943, 923, 900, 877, 854, 835, 820, 810, 807, 810, 820, 835, 854, 877, 900, 923, 943, 959, 970, 974, 971, 962, 947, 928, 907, 886, 868, 856, 853, 863, 886, 927, 986, 1064, 1161, 1276, 1408, 1554, 1712, 1878};
+//volatile    int         valorV[FFTSIZE] = { 0};
+volatile    int         valorV[FFTSIZE] = {2048,2139,2229,2318,2405,2489,2571,2649,2724,2796,2864,2929,2991,3049,3105,3159,3210,3260,3308,3354,3399,3442,3483,3522,3559,3592,3623,3649,3672,3690,3703,3711,3713,3711,3703,3690,3672,3649,3623,3592,3559,3522,3483,3442,3399,3354,3308,3260,3210,3159,3105,3049,2991,2929,2864,2796,2724,2649,2571,2489,2405,2318,2229,2139,2048,1957,1867,1778,1691,1607,1525,1447,1372,1300,1232,1167,1105,1047,991,937,886,836,788,742,697,654,613,574,537,504,473,447,424,406,393,385,383,385,393,406,424,447,473,504,537,574,613,654,697,742,788,836,886,937,991,1047,1105,1167,1232,1300,1372,1447,1525,1607,1691,1778,1867,1957,2048,2139,2229,2318,2405,2489,2571,2649,2724,2796,2864,2929,2991,3049,3105,3159,3210,3260,3308,3354,3399,3442,3483,3522,3559,3592,3623,3649,3672,3690,3703,3711,3713,3711,3703,3690,3672,3649,3623,3592,3559,3522,3483,3442,3399,3354,3308,3260,3210,3159,3105,3049,2991,2929,2864,2796,2724,2649,2571,2489,2405,2318,2229,2139,2048,1957,1867,1778,1691,1607,1525,1447,1372,1300,1232,1167,1105,1047,991,937,886,836,788,742,697,654,613,574,537,504,473,447,424,406,393,385,383,385,393,406,424,447,473,504,537,574,613,654,697,742,788,836,886,937,991,1047,1105,1167,1232,1300,1372,1447,1525,1607,1691,1778,1867,1957};
 
-volatile    int         valorI[FFTSIZE] = { 0};
-//volatile    int         valorI[FFTSIZE] = {2048, 2107, 2166, 2224, 2279, 2333, 2384, 2432, 2476, 2517, 2553, 2586, 2614, 2638, 2657, 2673, 2684, 2692, 2697, 2698, 2697, 2694, 2690, 2684, 2677, 2669, 2662, 2655, 2649, 2644, 2641, 2638, 2638, 2638, 2641, 2644, 2649, 2655, 2662, 2669, 2677, 2684, 2690, 2694, 2697, 2698, 2697, 2692, 2684, 2673, 2657, 2638, 2614, 2586, 2553, 2517, 2476, 2432, 2384, 2333, 2279, 2224, 2166, 2107, 2048, 1989, 1930, 1872, 1817, 1763, 1712, 1664, 1620, 1579, 1543, 1510, 1482, 1458, 1439, 1423, 1412, 1404, 1399, 1398, 1399, 1402, 1406, 1412, 1419, 1427, 1434, 1441, 1447, 1452, 1455, 1458, 1458, 1458, 1455, 1452, 1447, 1441, 1434, 1427, 1419, 1412, 1406, 1402, 1399, 1398, 1399, 1404, 1412, 1423, 1439, 1458, 1482, 1510, 1543, 1579, 1620, 1664, 1712, 1763, 1817, 1872, 1930, 1989, 2048, 2107, 2166, 2224, 2279, 2333, 2384, 2432, 2476, 2517, 2553, 2586, 2614, 2638, 2657, 2673, 2684, 2692, 2697, 2698, 2697, 2694, 2690, 2684, 2677, 2669, 2662, 2655, 2649, 2644, 2641, 2638, 2638, 2638, 2641, 2644, 2649, 2655, 2662, 2669, 2677, 2684, 2690, 2694, 2697, 2698, 2697, 2692, 2684, 2673, 2657, 2638, 2614, 2586, 2553, 2517, 2476, 2432, 2384, 2333, 2279, 2224, 2166, 2107, 2048, 1989, 1930, 1872, 1817, 1763, 1712, 1664, 1620, 1579, 1543, 1510, 1482, 1458, 1439, 1423, 1412, 1404, 1399, 1398, 1399, 1402, 1406, 1412, 1419, 1427, 1434, 1441, 1447, 1452, 1455, 1458, 1458, 1458, 1455, 1452, 1447, 1441, 1434, 1427, 1419, 1412, 1406, 1402, 1399, 1398, 1399, 1404, 1412, 1423, 1439, 1458, 1482, 1510, 1543, 1579, 1620, 1664, 1712, 1763, 1817, 1872, 1930, 1989};
+//volatile    int         valorI[FFTSIZE] = { 0};
+volatile    int         valorI[FFTSIZE] = {2048, 2107, 2166, 2224, 2279, 2333, 2384, 2432, 2476, 2517, 2553, 2586, 2614, 2638, 2657, 2673, 2684, 2692, 2697, 2698, 2697, 2694, 2690, 2684, 2677, 2669, 2662, 2655, 2649, 2644, 2641, 2638, 2638, 2638, 2641, 2644, 2649, 2655, 2662, 2669, 2677, 2684, 2690, 2694, 2697, 2698, 2697, 2692, 2684, 2673, 2657, 2638, 2614, 2586, 2553, 2517, 2476, 2432, 2384, 2333, 2279, 2224, 2166, 2107, 2048, 1989, 1930, 1872, 1817, 1763, 1712, 1664, 1620, 1579, 1543, 1510, 1482, 1458, 1439, 1423, 1412, 1404, 1399, 1398, 1399, 1402, 1406, 1412, 1419, 1427, 1434, 1441, 1447, 1452, 1455, 1458, 1458, 1458, 1455, 1452, 1447, 1441, 1434, 1427, 1419, 1412, 1406, 1402, 1399, 1398, 1399, 1404, 1412, 1423, 1439, 1458, 1482, 1510, 1543, 1579, 1620, 1664, 1712, 1763, 1817, 1872, 1930, 1989, 2048, 2107, 2166, 2224, 2279, 2333, 2384, 2432, 2476, 2517, 2553, 2586, 2614, 2638, 2657, 2673, 2684, 2692, 2697, 2698, 2697, 2694, 2690, 2684, 2677, 2669, 2662, 2655, 2649, 2644, 2641, 2638, 2638, 2638, 2641, 2644, 2649, 2655, 2662, 2669, 2677, 2684, 2690, 2694, 2697, 2698, 2697, 2692, 2684, 2673, 2657, 2638, 2614, 2586, 2553, 2517, 2476, 2432, 2384, 2333, 2279, 2224, 2166, 2107, 2048, 1989, 1930, 1872, 1817, 1763, 1712, 1664, 1620, 1579, 1543, 1510, 1482, 1458, 1439, 1423, 1412, 1404, 1399, 1398, 1399, 1402, 1406, 1412, 1419, 1427, 1434, 1441, 1447, 1452, 1455, 1458, 1458, 1458, 1455, 1452, 1447, 1441, 1434, 1427, 1419, 1412, 1406, 1402, 1399, 1398, 1399, 1404, 1412, 1423, 1439, 1458, 1482, 1510, 1543, 1579, 1620, 1664, 1712, 1763, 1817, 1872, 1930, 1989};
 
 int Vf_r[FFTSIZE]  = { 0};
 int If_r[FFTSIZE]  = { 0};
@@ -295,13 +295,13 @@ void select_pinza (){
   }
   switch(indicador){
     case 0:
-    ratio_setup(244,21,1);        //Pinza SCT 013 030. Calibrada ya con fuente programable.
+    ratio_setup(247.1,23,1);        //Pinza SCT 013 030. Calibrada ya con fuente programable.
     break;
     case 1:
-    ratio_setup(244,10,1);         //Pinza SCT 013 100. Falta calibrar
+    ratio_setup(247.1,8.7,1);         //Pinza SCT 013 100. Falta calibrar
     break;
     case 2:
-    ratio_setup(244,1,1);         //Pinza Chaubin E3N. Falta calibrar.
+    ratio_setup(247.1,8.7,1);         //Pinza Chaubin E3N. Falta calibrar.
     break;
   }
   TFTscreen.background(0, 0, 0);
@@ -351,10 +351,10 @@ void ratio_setup(float VCAL, float ICAL, float Fase_Cal)
   FASE_RATIO_TEMP = Fase_Cal;
 }
 
-void calc_FFT(int *f_r, float *magf, float *angf, float RATIO, float RATIO_ang)
+void calc_FFT(int *f_r, float *magf, float *angf, float RATIO)
 {
-  int         mag[HALF_FFTSIZE]     = { 0};
-  int         ang[HALF_FFTSIZE]     = { 0};
+  float         f_r_ratio[HALF_FFTSIZE]     = { 0};
+  float         f_i_ratio[HALF_FFTSIZE]     = { 0};
   int         f_i[FFTSIZE]   = { 0};
 
   //time_start = micros();
@@ -365,33 +365,32 @@ void calc_FFT(int *f_r, float *magf, float *angf, float RATIO, float RATIO_ang)
   radix.gain_Reset( f_r, LOG2_FFT - 1);         //La amplitud del armónico según la función fft es igual a la amplitud de la señal de entrada por la mitad del número de muestras.
   radix.gain_Reset( f_i, LOG2_FFT - 1);
 
-  radix.get_Magnit3( f_r, f_i, mag, ang);
-
-  radix.get_Ratio (mag, magf, RATIO);
-  radix.get_Ratio (ang, angf, RATIO_ang);
-
-
+  radix.get_Ratio (f_r, f_r_ratio, RATIO);
+  radix.get_Ratio (f_i, f_i_ratio, RATIO);
+  
+  radix.get_Magnit_float(f_r_ratio, f_i_ratio, magf, angf);
+  
   //time_calc  = micros() - time_start;
 
 }
 
-void post_FFT(float *V_mag, float *V_ang, float *I_mag, float *I_ang) {
+void post_FFT(float *V_mag_post, float *V_ang_post, float *I_mag_post, float *I_ang_post) {
   float sqVFFT=0, sumVFFT=0, sqIFFT=0, sumIFFT=0, instPFFT=0, sumPFFT=0, desfase = 0;
   
   for (int i = 1; i < PRIMEROS40_ARM; i++) {
 
-    sqVFFT = V_mag[2*i] * V_mag[2*i];                         //Cuadrado de los múltiplos de V de la frecuencia fundamental
+    sqVFFT = V_mag_post[2*i] * V_mag[2*i];                         //Cuadrado de los múltiplos de V de la frecuencia fundamental
     sumVFFT += sqVFFT;                                        //Sumatorio de los cuadrados de V
-    sqIFFT = I_mag[2*i] * I_mag[2*i];                         //Cuadrado de los múltiplos de I de la frecuencia fundamental
+    sqIFFT = I_mag_post[2*i] * I_mag_post[2*i];                         //Cuadrado de los múltiplos de I de la frecuencia fundamental
     sumIFFT += sqIFFT;                                        //Sumatorio de los cuadrados de I
-    desfase = V_ang[2*i] - I_ang[2*i];                        //Desfase entre V e I
-    instPFFT = V_mag[2*i] * I_mag[2*i] * cos(desfase);        //Potencia instantánea
+    desfase = V_ang_post[2*i] - I_ang_post[2*i];                        //Desfase entre V e I
+    instPFFT = V_mag_post[2*i] * I_mag_post[2*i] * cos(desfase);        //Potencia instantánea
     sumPFFT += instPFFT;                                      //Sumatorio de las potencias instantáneas
   }
-
-  VrmsFFT = sqrt((sumVFFT / 2) + (V_mag[0] * V_mag[0]));      //El 2 es de 1/(raiz(2)*raiz(2)) del cuadrado de tensión anterior más parte continua
-  IrmsFFT = sqrt((sumIFFT / 2) + (I_mag[0] * I_mag[0]));      //El 2 es de 1/(raiz(2)*raiz(2)) del cuadrado de intensidad anterior más parte continua
-  realPowerFFT = (sumPFFT/2)+(V_mag[0]*I_mag[0]);             //El 2 es de 1/(raiz(2)*raiz(2)) de la tensión por intensidad anterior más parte continua
+  
+  VrmsFFT = sqrt((sumVFFT / 2) + (V_mag_post[0] * V_mag_post[0]));      //El 2 es de 1/(raiz(2)*raiz(2)) del cuadrado de tensión anterior más parte continua
+  IrmsFFT = sqrt((sumIFFT / 2) + (I_mag_post[0] * I_mag_post[0]));      //El 2 es de 1/(raiz(2)*raiz(2)) del cuadrado de intensidad anterior más parte continua
+  realPowerFFT = (sumPFFT/2)+(V_mag_post[0]*I_mag_post[0]);             //El 2 es de 1/(raiz(2)*raiz(2)) de la tensión por intensidad anterior más parte continua
   apparentPowerFFT = VrmsFFT * IrmsFFT;
   reactivePowerFFT = sqrt((apparentPowerFFT * apparentPowerFFT) - (realPowerFFT * realPowerFFT));
   powerFactorFFT = realPowerFFT / apparentPowerFFT;
@@ -433,7 +432,7 @@ void calc_FastFFT(int *f_r, int *mag_Fast)
   radix.gain_Reset( f_r, LOG2_FFT - 1);         //La amplitud del armónico según la función fft es igual a la amplitud de la señal de entrada por la mitad del número de muestras.
   radix.gain_Reset( f_i, LOG2_FFT - 1);
 
-  radix.get_Magnit2( f_r, f_i, mag_Fast);
+  radix.get_Magnit( f_r, f_i, mag_Fast);
   //time_calc  = micros() - time_start;
 
 
@@ -629,8 +628,8 @@ void functionmenu (int posicion) {
             div_y=10;
             inicio_escala_x=5; 
             incr_escala_x=5;
-            inicio_escala_y=10; 
-            incr_escala_y=10;
+            inicio_escala_y=1; 
+            incr_escala_y=1;
             ejes("N arm", "V(%)", div_x, div_y, inicio_escala_x, incr_escala_x, inicio_escala_y, incr_escala_y);
             break;
           case 1:
@@ -711,8 +710,8 @@ void functionmenu (int posicion) {
           time_start = micros();
           numero_muestras = RESET_MUESTRAS;
           calc_offset();
-          calc_FFT(Vf_r, V_mag, V_ang, V_RATIO, quantum);
-          calc_FFT(If_r, I_mag, I_ang, I_RATIO, quantum);
+          calc_FFT(Vf_r, V_mag, V_ang, V_RATIO);
+          calc_FFT(If_r, I_mag, I_ang, I_RATIO);
           post_FFT(V_mag, V_ang, I_mag, I_ang);
           screen_multimeter(VrmsFFT, IrmsFFT, realPowerFFT, reactivePowerFFT, apparentPowerFFT, powerFactorFFT);
           time_calc  = micros() - time_start;
@@ -737,8 +736,8 @@ void functionmenu (int posicion) {
           time_start = micros();
           numero_muestras = RESET_MUESTRAS;
           calc_offset();
-          calc_FFT(Vf_r, V_mag, V_ang, V_RATIO, quantum);
-          calc_FFT(If_r, I_mag, I_ang, I_RATIO, quantum);
+          calc_FFT(Vf_r, V_mag, V_ang, V_RATIO);
+          calc_FFT(If_r, I_mag, I_ang, I_RATIO);
           post_FFT(V_mag, V_ang, I_mag, I_ang);
           calc_offset();
           calcVI(Vf_r, If_r, FASE_RATIO_TEMP);
@@ -792,13 +791,13 @@ void functionmenu (int posicion) {
           calc_offset(); 
           switch (VorI) {
             case 0:
-              calc_FFT(Vf_r, V_mag, V_ang, V_RATIO, quantum);
+              calc_FFT(Vf_r, V_mag, V_ang, V_RATIO);
               THDv=THD(V_mag, VrmsFFTTHD);    
               screen_variables_armonicos(THDv, VrmsFFTTHD);
               break;
             case 1:
 
-              calc_FFT(If_r, I_mag, I_ang, I_RATIO, quantum);
+              calc_FFT(If_r, I_mag, I_ang, I_RATIO);
               THDi=THD(I_mag, IrmsFFTTHD);
               screen_variables_armonicos(THDi, IrmsFFTTHD);
               break;
@@ -888,11 +887,15 @@ void espectro_frec40(int *frec) {
 
   int xPos = 34;
   int muestra;
-  int amplitud_fundamental = frec[2];
+  int amplitud_fundamental = frec[2]/10;
 
   for (int i = 0; i < PRIMEROS40_ARM; i++) {                                  
 
     int amplitud = frec[2*i+2];
+
+    if(amplitud>amplitud_fundamental){
+      amplitud=amplitud_fundamental;
+    }
 
     muestra = map(amplitud, 0, amplitud_fundamental, POS_EJE_X, POS_EJE_X-100);     //Cambiar segun circuito acondicionamiento
 
