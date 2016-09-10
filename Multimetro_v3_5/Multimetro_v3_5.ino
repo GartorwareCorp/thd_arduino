@@ -295,13 +295,13 @@ void select_pinza (){
   }
   switch(indicador){
     case 0:
-    ratio_setup(247.1,23,1);        //Pinza SCT 013 030. Calibrada ya con fuente programable.
+    ratio_setup(247.15,23,1);        //Pinza SCT 013 030. Calibrada ya con fuente programable.
     break;
     case 1:
-    ratio_setup(247.1,8.7,1);         //Pinza SCT 013 100. Falta calibrar
+    ratio_setup(247.15,9.6,1);         //Pinza SCT 013 100. Falta calibrar
     break;
     case 2:
-    ratio_setup(247.1,8.7,1);         //Pinza Chaubin E3N. Falta calibrar.
+    ratio_setup(247.15,9.5,1);         //Pinza Chaubin E3N. Falta calibrar.
     break;
   }
   TFTscreen.background(0, 0, 0);
